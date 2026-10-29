@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Мой дневник</title>
+
+  <!-- These lines let the iPad open the app full screen from the Home Screen -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Дневник">
+  <meta name="theme-color" content="#faf7f8">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-180.png">
+
+  <!-- Fonts (handwritten "Caveat" and soft "Comfortaa") and line icons (Tabler) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600&family=Comfortaa:wght@400;600&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-tool="draw">
+
+  <!-- 1. Splash: shown for a moment when the app opens -->
+  <section id="splash" class="screen">
+    <div class="logo"><i class="ti ti-notebook"></i></div>
+    <div class="app-name">Мой дневник</div>
+  </section>
+
+  <!-- 2. Welcome: only the first time (name and 4-digit password) -->
+  <section id="welcome" class="screen" hidden>
+    <div class="center">
+      <div class="logo small"><i class="ti ti-notebook"></i></div>
+      <h1>Добро пожаловать</h1>
+      <label class="field">Как тебя зовут?
+        <input id="nameInput" type="text" maxlength="30" autocomplete="off" placeholder="Анель">
+      </label>
+      <label class="field">Придумай пароль из 4 цифр
+        <input id="pinNew" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
+      </label>
+      <label class="field">Повтори пароль
+        <input id="pinRepeat" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
+      </label>
+      <p class="error" id="welcomeError"></p>
+      <button class="primary wide" id="welcomeSave">Сохранить</button>
+    </div>
+  </section>
+
+  <!-- 3. Lock: enter the password -->
+  <section id="lock" class="screen" hidden>
+    <div class="center">
+      <div class="avatar big" id="lockAvatar"></div>
+      <div class="lock-hello" id="lockHello"></div>
+      <div class="pin-dots" id="pinDots"><span></span><span></span><span></span><span></span></div>
+      <p class="error" id="lockError"></p>
+      <div class="keypad" id="keypad"></div>
+    </div>
+  </section>
+
+  <!-- 4. Home: profile, notebooks, sticker packs -->
+  <section id="home" class="screen" hidden>
+    <header class="home-head">
+      <div class="avatar" id="homeAvatar"></div>
+      <div class="grow">
+        <div class="home-hello" id="homeHello"></div>
+        <div class="muted small" id="homeSub"></div>
+      </div>
+      <button class="icon" id="bellBtn" aria-label="Напоминание"><i class="ti ti-bell"></i></button>
+      <button class="icon" id="settingsBtn" aria-label="Настройки"><i class="ti ti-settings"></i></button>
+    </header>
+
+    <div class="home-body">
+      <h2 class="section">Мои дневники</h2>
+      <div class="shelf" id="myNotebooks"></div>
+
+      <h2 class="section">Готовые блокноты</h2>
+      <p class="muted small">Нажми, чтобы создать такой блокнот у себя</p>
+      <div class="shelf" id="presetNotebooks"></div>
+    </div>
+
+    <footer class="home-stickers">
+      <h2 class="section">Стикерпаки</h2>
+      <div class="pack-row" id="packList"></div>
+    </footer>
+  </section>
+
+  <!-- 5. Notebook: sidebar + toolbar + page -->
+  <section id="notebook" class="screen" hidden>
+    <aside id="sidebar">
+      <div class="side-head">
+        <button class="icon" id="homeBtn" aria-label="На главную"><i class="ti ti-home"></i></button>
+        <div id="nbTitle"></div>
+        <button class="icon" id="sideClose" aria-label="Скрыть меню"><i class="ti ti-layout-sidebar-left-collapse"></i></button>
+      </div>
+
+      <div class="cal-head">
+        <button class="icon" id="calPrev" aria-label="Прошлый месяц"><i class="ti ti-chevron-left"></i></button>
+        <span id="calTitle"></span>
+        <button class="icon" id="calNext" aria-label="Следующий месяц"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <div class="calendar" id="calendar"></div>
+
+      <div class="side-sub">
+        <span>Страницы</span>
+        <span>
+          <button class="icon" id="deletePageBtn" aria-label="Удалить страницу"><i class="ti ti-trash"></i></button>
+          <button class="icon" id="addPageBtn" aria-label="Новая страница"><i class="ti ti-plus"></i></button>
+        </span>
+      </div>
+      <div class="thumbs" id="thumbs"></div>
+    </aside>
+
+    <div class="work">
+      <div id="toolbar">
+        <div class="tools-row">
+          <button class="icon" id="sideOpen" aria-label="Показать меню"><i class="ti ti-layout-sidebar-left-expand"></i></button>
+          <span class="sep"></span>
+          <button class="icon tool" data-tool="draw" aria-label="Писать пенсилом"><i class="ti ti-pencil"></i></button>
+          <button class="icon tool" data-tool="text" aria-label="Писать клавиатурой"><i class="ti ti-typography"></i></button>
+          <button class="icon tool" data-tool="erase" aria-label="Ластик"><i class="ti ti-eraser"></i></button>
+          <button class="icon tool" data-tool="items" aria-label="Стикеры"><i class="ti ti-sticker"></i></button>
+          <button class="icon" id="photoBtn" aria-label="Фото"><i class="ti ti-photo"></i></button>
+          <button class="icon" id="templateBtn" aria-label="Разметка страницы"><i class="ti ti-layout-grid"></i></button>
+          <span class="sep"></span>
+          <button class="icon" id="undoBtn" aria-label="Отменить"><i class="ti ti-arrow-back-up"></i></button>
+          <button class="icon" id="redoBtn" aria-label="Вернуть"><i class="ti ti-arrow-forward-up"></i></button>
+          <span class="grow"></span>
+          <button class="icon" id="prevPage" aria-label="Предыдущая страница"><i class="ti ti-chevron-left"></i></button>
+          <span class="muted small" id="pageNum"></span>
+          <button class="icon" id="nextPage" aria-label="Следующая страница"><i class="ti ti-chevron-right"></i></button>
+          <button class="icon" id="collapseBtn" aria-label="Свернуть панель"><i class="ti ti-chevrons-up"></i></button>
+        </div>
+
+        <!-- Options for each tool (only one is shown) -->
+        <div class="options" data-for="draw">
+          <div class="seg" id="brushList"></div>
+          <div class="colors" id="colorList"></div>
+          <label class="slider">Размер <input type="range" id="sizeRange" min="1" max="30"></label>
+          <label class="slider">Прозрачность <input type="range" id="opacityRange" min="10" max="100"></label>
+          <label class="slider">Стабилизация <input type="range" id="smoothRange" min="0" max="85"></label>
+        </div>
+
+        <div class="options" data-for="erase">
+          <label class="slider">Размер ластика <input type="range" id="eraserRange" min="8" max="120"></label>
+        </div>
+
+        <div class="options" data-for="text">
+          <select id="fontSelect" aria-label="Шрифт"></select>
+          <select id="fontSizeSelect" aria-label="Размер"></select>
+          <div class="seg">
+            <button class="fmt" data-cmd="bold" aria-label="Жирный"><b>Ж</b></button>
+            <button class="fmt" data-cmd="italic" aria-label="Курсив"><em>К</em></button>
+            <button class="fmt" data-cmd="underline" aria-label="Подчеркнуть"><u>Ч</u></button>
+            <button class="fmt" data-cmd="strikeThrough" aria-label="Зачеркнуть"><s>З</s></button>
+          </div>
+          <div class="colors" id="textColorList"></div>
+          <span class="hint">Нажми на страницу, чтобы добавить текст</span>
+        </div>
+
+        <div class="options" data-for="items">
+          <div class="seg" id="packTabs"></div>
+          <div class="sticker-row" id="packStickers"></div>
+          <span class="hint">Размер: тяни розовый кружок или раздвигай двумя пальцами</span>
+        </div>
+      </div>
+
+      <button class="icon float" id="expandBtn" aria-label="Показать панель" hidden><i class="ti ti-pencil"></i></button>
+
+      <div class="desk" id="desk">
+        <div class="page" id="page" data-template="lines">
+          <div class="layout" id="layout"></div>
+          <canvas id="drawCanvas" width="1200" height="1600"></canvas>
+          <canvas id="liveCanvas" width="1200" height="1600"></canvas>
+          <div class="items" id="items"></div>
+          <label class="page-date">
+            <span id="pageDateText"></span>
+            <input type="date" id="dateInput" aria-label="Дата страницы">
+          </label>
+        </div>
+
+        <!-- Shown when the page is zoomed in -->
+        <button id="zoomReset" hidden><i class="ti ti-zoom-reset"></i> 100%</button>
+
+        <!-- Shown when a sticker, photo or text is selected -->
+        <div id="itemTools" hidden>
+          <button class="icon" data-act="smaller" aria-label="Меньше"><i class="ti ti-minus"></i></button>
+          <button class="icon" data-act="bigger" aria-label="Больше"><i class="ti ti-plus"></i></button>
+          <button class="icon" data-act="left" aria-label="Повернуть влево"><i class="ti ti-rotate-2"></i></button>
+          <button class="icon" data-act="right" aria-label="Повернуть вправо"><i class="ti ti-rotate-clockwise-2"></i></button>
+          <button class="icon" data-act="front" aria-label="Наверх"><i class="ti ti-stack-front"></i></button>
+          <button class="icon" data-act="delete" aria-label="Удалить"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <input type="file" id="photoInput" accept="image/*" hidden>
+    <input type="file" id="customStickerInput" accept="image/*" hidden>
+  </section>
+
+  <!-- ===== Dialogs ===== -->
+
+  <dialog id="nbDialog">
+    <h2 id="nbDialogTitle">Новый дневник</h2>
+    <label class="field">Название
+      <input id="nbName" type="text" maxlength="40" placeholder="Мой дневник">
+    </label>
+    <h3>Обложка</h3>
+    <div class="pick-row" id="coverPick"></div>
+    <h3>Разметка страниц</h3>
+    <div class="pick-row" id="nbTemplatePick"></div>
+    <h3>Шаблон страниц</h3>
+    <div class="pick-row" id="nbLayoutPick"></div>
+    <div class="dialog-actions">
+      <button class="danger" id="nbDelete">Удалить</button>
+      <span class="grow"></span>
+      <button id="nbCancel">Отмена</button>
+      <button class="primary" id="nbSave">Создать</button>
+    </div>
+  </dialog>
+
+  <dialog id="packDialog">
+    <h2 id="packTitle"></h2>
+    <div class="pack-grid" id="packGrid"></div>
+    <div class="dialog-actions">
+      <button id="packClose">Закрыть</button>
+      <span class="grow"></span>
+      <button class="primary" id="packToggle"></button>
+    </div>
+  </dialog>
+
+  <dialog id="templateDialog">
+    <h2>Оформление страницы</h2>
+    <h3>Разметка</h3>
+    <div class="pick-row" id="pageTemplatePick"></div>
+    <h3>Цвет страницы</h3>
+    <div class="colors" id="paperPick"></div>
+    <h3>Цвет разметки</h3>
+    <div class="colors" id="rulePick"></div>
+    <h3>Шаблоны страниц</h3>
+    <div class="pick-row" id="pageLayoutPick"></div>
+    <div class="dialog-actions">
+      <span class="grow"></span>
+      <button id="templateClose">Готово</button>
+    </div>
+  </dialog>
+
+  <dialog id="frameDialog">
+    <h2>Как вставить фото?</h2>
+    <div class="frame-choice">
+      <button class="frame-option" data-frame="1">
+        <span class="polaroid-demo"><img id="framePreview1" alt=""></span>
+        С белой рамкой
+      </button>
+      <button class="frame-option" data-frame="0">
+        <span class="plain-demo"><img id="framePreview0" alt=""></span>
+        Без рамки
+      </button>
+    </div>
+    <div class="dialog-actions">
+      <span class="grow"></span>
+      <button id="frameCancel">Отмена</button>
+    </div>
+  </dialog>
+
+  <dialog id="reminderDialog">
+    <h2>Напоминание каждый день</h2>
+    <p>Само приложение пока не умеет присылать уведомления, но это можно сделать через приложение «Команды» на iPad:</p>
+    <ol>
+      <li>Открой «Команды» → внизу «Автоматизация» → «Новая автоматизация».</li>
+      <li>Выбери «Время суток», поставь время (например, 21:00) и «Ежедневно». Включи «Запускать сразу».</li>
+      <li>Добавь действие «Показать уведомление» и напиши: «Время написать в дневник ✍️».</li>
+    </ol>
+    <div class="dialog-actions">
+      <span class="grow"></span>
+      <button class="primary" id="reminderClose">Понятно</button>
+    </div>
+  </dialog>
+
+  <dialog id="settingsDialog">
+    <h2>Настройки</h2>
+    <label class="field">Имя
+      <input id="settingsName" type="text" maxlength="30">
+    </label>
+    <h3>Резервная копия</h3>
+    <p class="muted small">Дневник хранится только на этом iPad. Иногда сохраняй копию в «Файлы».</p>
+    <div class="row">
+      <button id="exportBtn"><i class="ti ti-download"></i> Сохранить копию</button>
+      <label class="button-like"><i class="ti ti-upload"></i> Загрузить копию
+        <input type="file" id="importInput" accept="application/json,.json" hidden>
+      </label>
+    </div>
+    <div class="dialog-actions">
+      <button id="lockNowBtn"><i class="ti ti-lock"></i> Заблокировать</button>
+      <span class="grow"></span>
+      <button class="primary" id="settingsSave">Готово</button>
+    </div>
+  </dialog>
+
+  <script src="db.js"></script>
+  <script src="stickers.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

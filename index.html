@@ -121,6 +121,7 @@
           <button class="icon tool" data-tool="draw" aria-label="Писать пенсилом"><i class="ti ti-pencil"></i></button>
           <button class="icon tool" data-tool="text" aria-label="Писать клавиатурой"><i class="ti ti-typography"></i></button>
           <button class="icon tool" data-tool="erase" aria-label="Ластик"><i class="ti ti-eraser"></i></button>
+          <button class="icon tool" data-tool="lasso" aria-label="Выделить"><i class="ti ti-lasso"></i></button>
           <button class="icon tool" data-tool="items" aria-label="Стикеры"><i class="ti ti-sticker"></i></button>
           <button class="icon" id="photoBtn" aria-label="Фото"><i class="ti ti-photo"></i></button>
           <button class="icon" id="templateBtn" aria-label="Разметка страницы"><i class="ti ti-layout-grid"></i></button>
@@ -138,6 +139,7 @@
         <div class="options" data-for="draw">
           <div class="seg" id="brushList"></div>
           <div class="colors" id="colorList"></div>
+          <div class="colors" id="glitterList"></div>
           <label class="slider">Размер <input type="range" id="sizeRange" min="1" max="30"></label>
           <label class="slider">Прозрачность <input type="range" id="opacityRange" min="10" max="100"></label>
           <label class="slider">Стабилизация <input type="range" id="smoothRange" min="0" max="85"></label>
@@ -145,6 +147,11 @@
 
         <div class="options" data-for="erase">
           <label class="slider">Размер ластика <input type="range" id="eraserRange" min="8" max="120"></label>
+        </div>
+
+        <div class="options" data-for="lasso">
+          <span class="hint">Обведи то, что хочешь выделить: текст, рисунок, стикеры, фото. Выделенное можно тянуть</span>
+          <button id="pasteBtn" hidden><i class="ti ti-clipboard"></i> Вставить</button>
         </div>
 
         <div class="options" data-for="text">
@@ -179,6 +186,7 @@
             <span id="pageDateText"></span>
             <input type="date" id="dateInput" aria-label="Дата страницы">
           </label>
+          <div id="selectionBox" hidden></div>
         </div>
 
         <!-- Shown when the page is zoomed in -->
@@ -193,6 +201,16 @@
           <button class="icon" data-act="front" aria-label="Наверх"><i class="ti ti-stack-front"></i></button>
           <button class="icon" data-act="delete" aria-label="Удалить"><i class="ti ti-trash"></i></button>
         </div>
+
+        <!-- Shown when something is selected with the lasso -->
+        <div id="selectionTools" hidden>
+          <button data-sel="copy"><i class="ti ti-copy"></i> Копировать</button>
+          <button data-sel="cut"><i class="ti ti-scissors"></i> Вырезать</button>
+          <button data-sel="delete"><i class="ti ti-trash"></i> Удалить</button>
+          <button data-sel="done"><i class="ti ti-check"></i> Готово</button>
+        </div>
+
+        <div id="toast" hidden></div>
       </div>
     </div>
 

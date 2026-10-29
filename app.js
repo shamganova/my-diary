@@ -95,6 +95,18 @@ const PRESETS = [
 
 const COLORS = ["#2b2730", "#8d8288", "#d4537e", "#f08a3c", "#e3b31b", "#46a874", "#3f86d0", "#8a5cd1"];
 
+// Glitter colours for the pen (saved as "glitter:gold" and so on; base null = rainbow)
+const GLITTERS = [
+  { id: "gold", base: "#d4a72c" },
+  { id: "silver", base: "#a8adb6" },
+  { id: "rose", base: "#d9988a" },
+  { id: "pink", base: "#e0679a" },
+  { id: "purple", base: "#8f63d2" },
+  { id: "blue", base: "#4a86d6" },
+  { id: "mint", base: "#3fb39a" },
+  { id: "rainbow", base: null },
+];
+
 const BRUSHES = {
   pen: { name: "Ручка", size: 5, opacity: 100 },
   nib: { name: "Перо", size: 6, opacity: 100 },
@@ -119,7 +131,7 @@ const FONT_SIZES = [
   { name: "Огромный", fs: 0.064 },
 ];
 
-const TOOL_ICONS = { draw: "ti-pencil", text: "ti-typography", erase: "ti-eraser", items: "ti-sticker" };
+const TOOL_ICONS = { draw: "ti-pencil", text: "ti-typography", erase: "ti-eraser", lasso: "ti-lasso", items: "ti-sticker" };
 
 // ---------- App state (what is going on right now) ----------
 
@@ -355,13 +367,17 @@ let hiddenAt = 0;
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     hiddenAt = Date.now();
+    dropSelection();
     flushSave();
   } else if (state.profile && hiddenAt && Date.now() - hiddenAt > 60_000 &&
              (currentScreen === "home" || currentScreen === "notebook")) {
     showLock(currentScreen);
   }
 });
-window.addEventListener("pagehide", flushSave);
+window.addEventListener("pagehide", () => {
+  dropSelection();
+  flushSave();
+});
 
 // ---------- Home ----------
 
@@ -639,6 +655,7 @@ async function openNotebook(id) {
 }
 
 $("#homeBtn").addEventListener("click", async () => {
+  dropSelection();
   await flushSave();
   showHome();
 });
@@ -667,6 +684,7 @@ async function makePage(date) {
 }
 
 async function addPage(date) {
+  dropSelection();
   await flushSave();
   const page = await makePage(date);
   state.pages.push(page);
@@ -675,6 +693,7 @@ async function addPage(date) {
 }
 
 async function goTo(index) {
+  dropSelection();  // finish a lasso selection on this page before leaving it
   await flushSave();
   state.current = clamp(index, 0, state.pages.length - 1);
   renderPage();
@@ -686,6 +705,7 @@ $("#addPageBtn").addEventListener("click", () => addPage(todayISO()));
 
 $("#deletePageBtn").addEventListener("click", async () => {
   if (!confirm("Удалить эту страницу?")) return;
+  dropSelection();
   const page = curPage();
   dirtyPage = null;
   await DB.del("pages", page.id);
@@ -747,6 +767,11 @@ function cancelFirstFinger() {
     drag = null;
     savePageSoon();
   }
+  if (lasso) {
+    lasso = null;
+    lctx.clearRect(0, 0, liveCanvas.width, liveCanvas.height);
+  }
+  selMove = null;
   touches.clear();
 }
 
@@ -835,6 +860,7 @@ function renderPage() {
 $("#dateInput").addEventListener("change", (e) => {
   const page = curPage();
   if (!e.target.value) return;
+  dropSelection();
   page.date = e.target.value;
   sortPages();
   state.current = state.pages.indexOf(page);
@@ -985,6 +1011,9 @@ $("#sideOpen").addEventListener("click", () => {
 // ---------- Toolbar ----------
 
 function setTool(tool) {
+  if (tool !== "lasso") dropSelection();
+  if (tool !== "text") activeTextId = null;
+  $("#pasteBtn").hidden = !clipboard;
   state.tool = tool;
   document.body.dataset.tool = tool;
   $$(".tool").forEach((b) => b.classList.toggle("active", b.dataset.tool === tool));
@@ -1030,6 +1059,23 @@ function renderDrawOptions() {
     renderDrawOptions();
     saveToolsSoon();
   });
+
+  const glitterBox = $("#glitterList");
+  glitterBox.innerHTML = '<span class="colors-label">Блёстки</span>';
+  for (const look of GLITTERS) {
+    const value = "glitter:" + look.id;
+    const b = document.createElement("button");
+    b.className = "swatch glitter" + (value === state.color ? " active" : "");
+    b.style.backgroundImage = `url(${glitterTile(look.id).url})`;
+    b.setAttribute("aria-label", "Блестящий цвет");
+    b.addEventListener("click", () => {
+      state.color = value;
+      renderDrawOptions();
+      saveToolsSoon();
+    });
+    glitterBox.appendChild(b);
+  }
+
   $("#sizeRange").value = state.brushes[state.brush].size;
   $("#opacityRange").value = state.brushes[state.brush].opacity;
   $("#smoothRange").value = state.smooth;
@@ -1052,7 +1098,7 @@ function renderColors(box, chosen, onPick, keepFocus = false, list = COLORS) {
   more.className = "color-more";
   more.innerHTML = '<input type="color" aria-label="Другой цвет">';
   const input = more.querySelector("input");
-  input.value = chosen;
+  if (/^#[0-9a-f]{6}$/i.test(chosen)) input.value = chosen;  // a glitter colour is not a normal colour
   input.addEventListener("change", () => onPick(input.value));
   box.appendChild(more);
 }
@@ -1078,9 +1124,31 @@ $("#eraserRange").addEventListener("input", (e) => {
 
 let stroke = null;
 let pencilSeen = false;  // after the Pencil is used, fingers don't draw (so your palm doesn't)
+let paintToken = 0;
+
+// "Отменить" / "Вернуть": copies of the page from before each change (drawing + stickers, photos, text)
 let undoStack = [];
 let redoStack = [];
-let paintToken = 0;
+
+function snapshot() {
+  return { drawing: curPage().drawing, items: curPage().items.map((item) => ({ ...item })) };
+}
+
+function pushUndo() {
+  undoStack.push(snapshot());
+  if (undoStack.length > 30) undoStack.shift();
+  redoStack = [];
+}
+
+function restore(snap) {
+  const isEmptyText = (item) => item.type === "text" && !(item.html || "").replace(/<[^>]*>/g, "").trim();
+  curPage().drawing = snap.drawing;
+  curPage().items = snap.items.filter((item) => !isEmptyText(item));
+  state.selectedId = null;
+  paintDrawing(snap.drawing);
+  renderItems();
+  savePageSoon();
+}
 
 async function paintDrawing(dataURL) {
   const token = ++paintToken;  // if another page is opened meanwhile, skip the old one
@@ -1118,6 +1186,62 @@ function pencilPattern(color) {
   return patternCache[color];
 }
 
+// Glitter: the colour with thousands of tiny lighter and darker flakes and a few white sparkles
+const isGlitter = (color) => color.startsWith("glitter:");
+const glitterCache = {};
+
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [n >> 16, (n >> 8) & 255, n & 255];
+}
+
+function mixRgb(rgb, target, amount) {
+  return rgb.map((c, i) => Math.round(c + (target[i] - c) * amount));
+}
+
+function glitterTile(id) {
+  if (glitterCache[id]) return glitterCache[id];
+  const look = GLITTERS.find((g) => g.id === id) || GLITTERS[0];
+  const size = 96;
+  const tile = document.createElement("canvas");
+  tile.width = tile.height = size;
+  const g = tile.getContext("2d");
+  const base = look.base ? hexToRgb(look.base) : [214, 196, 236];
+  g.fillStyle = `rgb(${base})`;
+  g.fillRect(0, 0, size, size);
+
+  for (let i = 0; i < 3000; i++) {
+    if (look.base) {
+      const flake = Math.random() < 0.55
+        ? mixRgb(base, [255, 255, 255], Math.random() * 0.75)  // lighter flake
+        : mixRgb(base, [0, 0, 0], Math.random() * 0.4);         // darker flake
+      g.fillStyle = `rgb(${flake})`;
+    } else {
+      g.fillStyle = `hsl(${Math.floor(Math.random() * 360)}, 85%, ${55 + Math.floor(Math.random() * 25)}%)`;  // rainbow
+    }
+    const flakeSize = Math.random() < 0.8 ? 1 : 2;
+    g.fillRect(Math.floor(Math.random() * size), Math.floor(Math.random() * size), flakeSize, flakeSize);
+  }
+
+  g.fillStyle = "rgba(255, 255, 255, 0.95)";
+  for (let i = 0; i < 20; i++) {
+    const x = Math.floor(Math.random() * size), y = Math.floor(Math.random() * size);
+    g.fillRect(x, y, 2, 2);
+    if (i % 4 === 0) {  // a tiny star
+      g.fillRect(x - 2, y, 6, 1);
+      g.fillRect(x, y - 2, 1, 6);
+    }
+  }
+
+  glitterCache[id] = { pattern: lctx.createPattern(tile, "repeat"), url: tile.toDataURL() };
+  return glitterCache[id];
+}
+
+// What the pen paints with: a plain colour or a glitter pattern
+function inkStyle() {
+  return isGlitter(state.color) ? glitterTile(state.color.slice("glitter:".length)).pattern : state.color;
+}
+
 // A nib (like a fountain pen) is a flat tip held at an angle:
 // lines going one way are a bit thinner, the other way a bit thicker.
 // The width changes smoothly, so the line never jumps from thin to thick.
@@ -1133,7 +1257,7 @@ function drawNib(ctx, from, to) {
     stroke.nibWidth = stroke.nibWidth === undefined ? target : stroke.nibWidth + (target - stroke.nibWidth) * 0.3;
   }
   ctx.lineWidth = stroke.nibWidth || size;
-  ctx.strokeStyle = state.color;
+  ctx.strokeStyle = inkStyle();
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   ctx.beginPath();
@@ -1153,11 +1277,11 @@ function drawSegment(from, to) {
     ctx.lineWidth = state.eraserSize;
   } else {
     const size = state.brushes[state.brush].size;
-    ctx.strokeStyle = state.color;
+    ctx.strokeStyle = inkStyle();
     if (state.brush === "pen") ctx.lineWidth = size * (0.35 + to.p * 1.3);
     if (state.brush === "pencil") {
       ctx.lineWidth = size * (0.4 + to.p * 0.8);
-      ctx.strokeStyle = pencilPattern(state.color);
+      if (!isGlitter(state.color)) ctx.strokeStyle = pencilPattern(state.color);
     }
     if (state.brush === "marker") ctx.lineWidth = size * 1.6;
     if (state.brush === "highlighter") ctx.lineWidth = size * 3;
@@ -1173,10 +1297,8 @@ function startStroke(e) {
   if (e.pointerType === "pen") pencilSeen = true;
   if (pencilSeen && e.pointerType === "touch") return;
   e.preventDefault();
-  pageEl.setPointerCapture(e.pointerId);
-  undoStack.push(curPage().drawing);
-  if (undoStack.length > 30) undoStack.shift();
-  redoStack = [];
+  capturePointer(e.pointerId);
+  pushUndo();
 
   const point = canvasPoint(e);
   stroke = { pointerId: e.pointerId, erase: state.tool === "erase", smooth: point, raw: point };
@@ -1224,18 +1346,16 @@ function endStroke(e) {
 }
 
 $("#undoBtn").addEventListener("click", () => {
+  dropSelection();
   if (undoStack.length === 0) return;
-  redoStack.push(curPage().drawing);
-  curPage().drawing = undoStack.pop();
-  paintDrawing(curPage().drawing);
-  savePageSoon();
+  redoStack.push(snapshot());
+  restore(undoStack.pop());
 });
 $("#redoBtn").addEventListener("click", () => {
+  dropSelection();
   if (redoStack.length === 0) return;
-  undoStack.push(curPage().drawing);
-  curPage().drawing = redoStack.pop();
-  paintDrawing(curPage().drawing);
-  savePageSoon();
+  undoStack.push(snapshot());
+  restore(redoStack.pop());
 });
 
 // ---------- Things on the page: stickers, photos, text ----------
@@ -1312,6 +1432,7 @@ function select(id) {
 }
 
 function addItem(item) {
+  pushUndo();
   curPage().items.push(item);
   markWritten();
   savePageSoon();
@@ -1336,6 +1457,7 @@ function itemAnchor(item) {
 
 function startDrag(e, el) {
   e.preventDefault();
+  pushUndo();
   const item = findItem(el.dataset.id);
   select(item.id);
   const anchor = itemAnchor(item);
@@ -1347,12 +1469,13 @@ function startDrag(e, el) {
     dx: e.clientX - anchor.x,
     dy: e.clientY - anchor.y,
   };
-  pageEl.setPointerCapture(e.pointerId);
+  capturePointer(e.pointerId);
 }
 
 // Pull the circle away from the centre: bigger; towards it: smaller
 function startResize(e, el) {
   e.preventDefault();
+  pushUndo();
   const item = findItem(el.dataset.id);
   const anchor = itemAnchor(item);
   drag = {
@@ -1365,13 +1488,14 @@ function startResize(e, el) {
     startW: item.w,
     startFs: item.fs,
   };
-  pageEl.setPointerCapture(e.pointerId);
+  capturePointer(e.pointerId);
 }
 
 // Two fingers: spread to make bigger, pinch to make smaller, twist to rotate
 function startPinch(e) {
   e.preventDefault();
-  pageEl.setPointerCapture(e.pointerId);
+  pushUndo();
+  capturePointer(e.pointerId);
   const item = findItem(state.selectedId);
   const [a, b] = [...touches.values()];
   drag = {
@@ -1425,6 +1549,7 @@ function endDrag(e) {
 pageEl.addEventListener("pointerdown", (e) => {
   if (e.target.closest(".page-date")) return;
   if (state.tool === "draw" || state.tool === "erase") return startStroke(e);
+  if (state.tool === "lasso") return startLasso(e);
   if (state.tool !== "items") return;
 
   touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -1438,12 +1563,14 @@ pageEl.addEventListener("pointermove", (e) => {
   if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
   moveStroke(e);
   moveDrag(e);
+  moveLasso(e);
 });
 for (const type of ["pointerup", "pointercancel"]) {
   pageEl.addEventListener(type, (e) => {
     touches.delete(e.pointerId);
     endStroke(e);
     endDrag(e);
+    endLasso(e);
   });
 }
 
@@ -1451,6 +1578,7 @@ $("#itemTools").addEventListener("click", (e) => {
   const button = e.target.closest("button");
   const item = findItem(state.selectedId);
   if (!button || !item) return;
+  pushUndo();
   const act = button.dataset.act;
   const factor = act === "bigger" ? 1.15 : act === "smaller" ? 1 / 1.15 : 1;
   item.w = clamp(item.w * factor, 0.05, 1);
@@ -1465,6 +1593,339 @@ $("#itemTools").addEventListener("click", (e) => {
   renderItems();
   savePageSoon();
 });
+
+// ---------- Lasso: select, move, copy, cut, delete, paste ----------
+// Draw a loop around writing, drawings, stickers, photos or text: what is inside gets selected.
+// The writing is a picture made of pixels, so the selected piece is cut out of the drawing
+// and floats as a small picture while you move it. When you tap outside, it is put back.
+
+let lasso = null;      // the loop you are drawing: { pointerId, points, color }
+let selection = null;  // what is selected (see makeSelection)
+let selMove = null;    // moving the selection: { pointerId, last }
+let clipboard = null;  // what you copied
+
+function capturePointer(id) {
+  try {
+    pageEl.setPointerCapture(id);
+  } catch {
+    // the finger is already gone
+  }
+}
+
+function tracePolygon(ctx, points) {
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (const p of points) ctx.lineTo(p.x, p.y);
+  ctx.closePath();
+}
+
+// Is the point inside the loop? (count how many times a line to the right crosses the loop)
+function pointInPolygon(point, points) {
+  let inside = false;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const a = points[i], b = points[j];
+    if ((a.y > point.y) !== (b.y > point.y) && point.x < (b.x - a.x) * (point.y - a.y) / (b.y - a.y) + a.x) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function insideBox(point, box) {
+  return point.x >= box.x && point.x <= box.x + box.w && point.y >= box.y && point.y <= box.y + box.h;
+}
+
+function startLasso(e) {
+  if (lasso || selMove) return;  // another finger is already busy
+  e.preventDefault();
+  const point = canvasPoint(e);
+  if (selection && insideBox(point, selection.box)) {
+    lift();
+    selMove = { pointerId: e.pointerId, last: point };
+  } else {
+    dropSelection();
+    const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+    lasso = { pointerId: e.pointerId, points: [point], color: accent || "#d4537e" };
+    liveCanvas.style.opacity = 1;
+    liveCanvas.style.mixBlendMode = "normal";
+  }
+  capturePointer(e.pointerId);
+}
+
+function moveLasso(e) {
+  if (selMove && e.pointerId === selMove.pointerId) {
+    const point = canvasPoint(e);
+    moveSelection(point.x - selMove.last.x, point.y - selMove.last.y);
+    selMove.last = point;
+    return;
+  }
+  if (!lasso || e.pointerId !== lasso.pointerId) return;
+  lasso.points.push(canvasPoint(e));
+  // Draw the dashed loop
+  lctx.clearRect(0, 0, liveCanvas.width, liveCanvas.height);
+  lctx.save();
+  lctx.setLineDash([14, 10]);
+  lctx.lineWidth = 3;
+  lctx.strokeStyle = lasso.color;
+  tracePolygon(lctx, lasso.points);
+  lctx.stroke();
+  lctx.restore();
+}
+
+function endLasso(e) {
+  if (selMove && e.pointerId === selMove.pointerId) {
+    selMove = null;
+    return;
+  }
+  if (!lasso || e.pointerId !== lasso.pointerId) return;
+  const points = lasso.points;
+  lasso = null;
+  lctx.clearRect(0, 0, liveCanvas.width, liveCanvas.height);
+  if (points.length >= 3) makeSelection(points);
+}
+
+// The part of the drawing inside the loop, cut down to where there really is ink
+function extractInk(points, box) {
+  const piece = document.createElement("canvas");
+  piece.width = box.w;
+  piece.height = box.h;
+  const g = piece.getContext("2d", { willReadFrequently: true });
+  g.translate(-box.x, -box.y);
+  tracePolygon(g, points);
+  g.clip();
+  g.drawImage(drawCanvas, 0, 0);
+
+  const data = g.getImageData(0, 0, box.w, box.h).data;
+  let minX = box.w, minY = box.h, maxX = -1, maxY = -1;
+  for (let y = 0; y < box.h; y++) {
+    for (let x = 0; x < box.w; x++) {
+      if (data[(y * box.w + x) * 4 + 3] === 0) continue;  // transparent: no ink here
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+  }
+  if (maxX < 0) return null;  // no ink inside the loop
+
+  const w = maxX - minX + 1, h = maxY - minY + 1;
+  const ink = document.createElement("canvas");
+  ink.width = w;
+  ink.height = h;
+  ink.getContext("2d").drawImage(piece, minX, minY, w, h, 0, 0, w, h);
+  return { canvas: ink, x: box.x + minX, y: box.y + minY, w, h };
+}
+
+// The frame of a sticker, photo or text on the page, in drawing units
+function itemBox(el) {
+  const page = pageEl.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  const sx = drawCanvas.width / page.width, sy = drawCanvas.height / page.height;
+  return { x: (r.left - page.left) * sx, y: (r.top - page.top) * sy, w: r.width * sx, h: r.height * sy };
+}
+
+function makeSelection(points) {
+  const xs = points.map((p) => p.x), ys = points.map((p) => p.y);
+  const x1 = clamp(Math.floor(Math.min(...xs)), 0, drawCanvas.width);
+  const x2 = clamp(Math.ceil(Math.max(...xs)), 0, drawCanvas.width);
+  const y1 = clamp(Math.floor(Math.min(...ys)), 0, drawCanvas.height);
+  const y2 = clamp(Math.ceil(Math.max(...ys)), 0, drawCanvas.height);
+  if (x2 - x1 < 4 || y2 - y1 < 4) return;  // the loop is too small
+
+  const ink = extractInk(points, { x: x1, y: y1, w: x2 - x1, h: y2 - y1 });
+  let bounds = ink ? { x1: ink.x, y1: ink.y, x2: ink.x + ink.w, y2: ink.y + ink.h } : null;
+
+  // Stickers, photos and text are selected when their centre is inside the loop
+  const itemIds = [];
+  for (const el of itemsEl.querySelectorAll(".item")) {
+    const b = itemBox(el);
+    if (!pointInPolygon({ x: b.x + b.w / 2, y: b.y + b.h / 2 }, points)) continue;
+    itemIds.push(el.dataset.id);
+    bounds = {
+      x1: Math.min(bounds ? bounds.x1 : b.x, b.x),
+      y1: Math.min(bounds ? bounds.y1 : b.y, b.y),
+      x2: Math.max(bounds ? bounds.x2 : b.x + b.w, b.x + b.w),
+      y2: Math.max(bounds ? bounds.y2 : b.y + b.h, b.y + b.h),
+    };
+  }
+  if (!bounds) return;  // nothing inside the loop
+
+  const pad = 12;
+  selection = {
+    pageId: curPage().id,
+    points,
+    ink,
+    itemIds,
+    lifted: false,  // true when the ink is taken out of the drawing and floats
+    box: { x: bounds.x1 - pad, y: bounds.y1 - pad, w: bounds.x2 - bounds.x1 + pad * 2, h: bounds.y2 - bounds.y1 + pad * 2 },
+  };
+  showSelection();
+}
+
+function placeOnPage(el, x, y, w, h) {
+  el.style.left = (x / drawCanvas.width) * 100 + "%";
+  el.style.top = (y / drawCanvas.height) * 100 + "%";
+  el.style.width = (w / drawCanvas.width) * 100 + "%";
+  el.style.height = (h / drawCanvas.height) * 100 + "%";
+}
+
+function showSelection() {
+  const boxEl = $("#selectionBox");
+  boxEl.hidden = !selection;
+  $("#selectionTools").hidden = !selection;
+  if (!selection) return;
+  const { box, ink } = selection;
+  placeOnPage(boxEl, box.x, box.y, box.w, box.h);
+  if (ink && selection.lifted) {
+    if (!ink.canvas.isConnected) {
+      ink.canvas.className = "selection-ink";
+      pageEl.appendChild(ink.canvas);
+    }
+    placeOnPage(ink.canvas, ink.x, ink.y, ink.w, ink.h);
+  }
+}
+
+// Before moving or deleting: take the ink out of the drawing, so it can float
+function lift() {
+  if (selection.lifted) return;
+  pushUndo();
+  if (selection.ink) {
+    dctx.save();
+    dctx.globalCompositeOperation = "destination-out";
+    tracePolygon(dctx, selection.points);
+    dctx.fill();
+    dctx.restore();
+  }
+  selection.lifted = true;
+  showSelection();
+}
+
+function moveSelection(dx, dy) {
+  selection.box.x += dx;
+  selection.box.y += dy;
+  if (selection.ink) {
+    selection.ink.x += dx;
+    selection.ink.y += dy;
+  }
+  for (const id of selection.itemIds) {
+    const item = findItem(id);
+    const el = itemsEl.querySelector(`[data-id="${id}"]`);
+    if (!item || !el) continue;
+    item.x += dx / drawCanvas.width;
+    item.y += dy / drawCanvas.height;
+    placeItem(el, item);
+  }
+  showSelection();
+}
+
+// Put the floating ink back into the drawing and finish the selection
+function dropSelection() {
+  if (!selection) return;
+  const sel = selection;
+  selection = null;
+  selMove = null;
+  if (sel.ink) sel.ink.canvas.remove();
+  if (sel.lifted && state.nb && curPage().id === sel.pageId) {
+    if (sel.ink) {
+      dctx.drawImage(sel.ink.canvas, Math.round(sel.ink.x), Math.round(sel.ink.y));
+      curPage().drawing = drawCanvas.toDataURL("image/png");
+    }
+    savePageSoon();
+  }
+  showSelection();
+}
+
+function cloneCanvas(source) {
+  const copy = document.createElement("canvas");
+  copy.width = source.width;
+  copy.height = source.height;
+  copy.getContext("2d").drawImage(source, 0, 0);
+  return copy;
+}
+
+function copySelection() {
+  const { ink, box } = selection;
+  clipboard = {
+    ink: ink ? { ...ink, canvas: cloneCanvas(ink.canvas) } : null,
+    items: selection.itemIds.map((id) => findItem(id)).filter(Boolean).map((item) => ({ ...item })),
+    box: { ...box },
+    pastes: 0,
+  };
+  $("#pasteBtn").hidden = false;
+}
+
+function deleteSelection() {
+  lift();  // takes the ink out of the drawing and remembers the page for "Отменить"
+  const sel = selection;
+  selection = null;
+  if (sel.ink) {
+    sel.ink.canvas.remove();
+    curPage().drawing = drawCanvas.toDataURL("image/png");
+  }
+  curPage().items = curPage().items.filter((item) => !sel.itemIds.includes(item.id));
+  renderItems();
+  showSelection();
+  savePageSoon();
+}
+
+function pasteClipboard() {
+  if (!clipboard) return;
+  dropSelection();
+  pushUndo();
+  clipboard.pastes += 1;
+  // Each paste lands a little lower and to the right, but stays on the page
+  const { box } = clipboard;
+  const shift = 40 * clipboard.pastes;
+  const dx = clamp(box.x + shift, 0, Math.max(0, drawCanvas.width - box.w)) - box.x;
+  const dy = clamp(box.y + shift, 0, Math.max(0, drawCanvas.height - box.h)) - box.y;
+
+  const itemIds = [];
+  for (const copy of clipboard.items) {
+    const item = { ...copy, id: uid(), x: copy.x + dx / drawCanvas.width, y: copy.y + dy / drawCanvas.height };
+    curPage().items.push(item);
+    itemIds.push(item.id);
+  }
+  const ink = clipboard.ink;
+  selection = {
+    pageId: curPage().id,
+    points: null,
+    ink: ink ? { ...ink, canvas: cloneCanvas(ink.canvas), x: ink.x + dx, y: ink.y + dy } : null,
+    itemIds,
+    lifted: true,  // the pasted ink floats until you tap outside
+    box: { x: box.x + dx, y: box.y + dy, w: box.w, h: box.h },
+  };
+  renderItems();
+  markWritten();
+  showSelection();
+}
+
+$("#selectionTools").addEventListener("click", (e) => {
+  const button = e.target.closest("button");
+  if (!button || !selection) return;
+  const act = button.dataset.sel;
+  if (act === "copy") {
+    copySelection();
+    showToast("Скопировано");
+  }
+  if (act === "cut") {
+    copySelection();
+    deleteSelection();
+    showToast("Вырезано");
+  }
+  if (act === "delete") deleteSelection();
+  if (act === "done") dropSelection();
+});
+
+$("#pasteBtn").addEventListener("click", pasteClipboard);
+
+let toastTimer = null;
+function showToast(text) {
+  const toast = $("#toast");
+  toast.textContent = text;
+  toast.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (toast.hidden = true), 1500);
+}
 
 // ---------- Text (the "Aa" tool) ----------
 
@@ -1510,14 +1971,22 @@ pageEl.addEventListener("click", (e) => {
     rot: 0,
     html: "",
   };
+  pushUndo();
+  newTextId = item.id;
   curPage().items.push(item);
   renderItems();
   itemsEl.querySelector(`[data-id="${item.id}"]`).focus();
 });
 
+let newTextId = null;  // the text box that was just created
+
 itemsEl.addEventListener("focusin", (e) => {
   const el = e.target.closest(".item.text");
-  if (el) activeTextId = el.dataset.id;
+  if (!el) return;
+  // You start editing an older text: remember the page, so "Отменить" can bring the old text back
+  if (el.dataset.id !== newTextId && el.dataset.id !== activeTextId) pushUndo();
+  newTextId = null;
+  activeTextId = el.dataset.id;
 });
 
 itemsEl.addEventListener("input", (e) => {

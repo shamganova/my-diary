@@ -11,6 +11,8 @@ It is a web app: open it in Safari and add it to the Home Screen, and it works l
 - Page rulings (lines, grid, dots, blank), page colour and line colour
 - Page templates: to-do list, day and week planners, habit tracker, mood tracker, gratitude page
 - Sticker packs, your own stickers, and photos with an optional polaroid frame
+- Lasso: select writing, drawings, stickers and photos, then move, copy, cut, delete or paste them
+- Undo and redo for writing, stickers, photos and text
 - A calendar of the days you wrote, and page thumbnails
 - A 4-digit lock and a backup file you can save to Files
 

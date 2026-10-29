@@ -357,6 +357,8 @@ select { width: auto; min-height: 36px; font-size: 14px; }
   box-shadow: 0 0 0 1px var(--border);
 }
 .swatch.active { box-shadow: 0 0 0 2px var(--accent); }
+.swatch.glitter { background-size: 48px 48px; }
+.colors-label { font-size: 13px; color: var(--muted); margin-right: 2px; white-space: nowrap; }
 .color-more {
   position: relative;
   width: 28px;
@@ -597,6 +599,7 @@ select { width: auto; min-height: 36px; font-size: 14px; }
 /* Which things react to touches depends on the tool */
 body[data-tool="draw"] .item,
 body[data-tool="erase"] .item,
+body[data-tool="lasso"] .item,
 body[data-tool="text"] .item:not(.text),
 .thumb .item,
 .tpl-pick .item { pointer-events: none; }
@@ -616,6 +619,47 @@ body[data-tool="text"] .item:not(.text),
   border: 1px solid var(--border);
   border-radius: 16px;
   box-shadow: 0 4px 14px rgba(60, 30, 40, 0.12);
+}
+
+/* Lasso selection */
+#selectionBox {
+  position: absolute;
+  z-index: 5;
+  border: 2px dashed var(--accent);
+  border-radius: 6px;
+  background: rgba(212, 83, 126, 0.06);
+  pointer-events: none;
+}
+.selection-ink { position: absolute; z-index: 4; pointer-events: none; }
+
+#selectionTools {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(60, 30, 40, 0.12);
+}
+#selectionTools button { min-height: 36px; padding: 0 10px; font-size: 14px; background: transparent; border-color: transparent; }
+
+#toast {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  color: #fff;
+  background: rgba(43, 39, 48, 0.85);
+  pointer-events: none;
 }
 
 /* ---------- Dialogs ---------- */

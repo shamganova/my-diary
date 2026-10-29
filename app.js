@@ -759,7 +759,6 @@ function pageOrigin() {
 
 // The second finger came: stop the line or move that the first finger started
 function cancelFirstFinger() {
-  cancelHold();
   if (stroke) {
     clearTimeout(stroke.holdTimer);
     stroke = null;
@@ -1917,62 +1916,13 @@ function endDrag(e) {
   if (!drag) return;
   const finished = drag.mode === "pinch" ? touches.size < 2 : e.pointerId === drag.pointerId;
   if (!finished) return;
-  if (drag.el) drag.el.classList.remove("picked-up");
   drag = null;
   savePageSoon();
-}
-
-// Press and hold a sticker or photo (in the pen, eraser or text tool) to pick it up and move it
-let hold = null;            // a press that may become "pick up": { pointerId, x, y, el, timer }
-let suppressClick = false;  // after moving, the same tap must not also add a text box
-
-function itemAt(x, y) {
-  const els = [...itemsEl.querySelectorAll(".item:not(.text)")].reverse();  // the top one first
-  return els.find((el) => {
-    const r = el.getBoundingClientRect();
-    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
-  });
-}
-
-function watchItemHold(e) {
-  if (e.pointerType === "pen") return;  // only a finger: the Pencil keeps writing over stickers
-  const el = itemAt(e.clientX, e.clientY);
-  if (!el || hold) return;
-  const pointerId = e.pointerId;
-  hold = { pointerId, x: e.clientX, y: e.clientY, el, timer: setTimeout(() => pickUpItem(), 500) };
-}
-
-function cancelHold() {
-  if (!hold) return;
-  clearTimeout(hold.timer);
-  hold = null;
-}
-
-function pickUpItem() {
-  const { pointerId, x, y, el } = hold;
-  hold = null;
-  if (stroke && stroke.pointerId === pointerId) {  // forget the dot this press already drew
-    clearTimeout(stroke.holdTimer);
-    stroke = null;
-    lctx.clearRect(0, 0, liveCanvas.width, liveCanvas.height);
-    undoStack.pop();
-    paintDrawing(curPage().drawing);
-  }
-  const item = findItem(el.dataset.id);
-  if (!item) return;
-  pushUndo();
-  const anchor = itemAnchor(item);
-  drag = { mode: "move", pointerId, item, el, dx: x - anchor.x, dy: y - anchor.y };
-  el.classList.add("picked-up");
-  capturePointer(pointerId);
-  suppressClick = true;
 }
 
 // One place that decides what a touch on the page does, depending on the tool
 pageEl.addEventListener("pointerdown", (e) => {
   if (e.target.closest(".page-date, .page-title")) return;
-  suppressClick = false;
-  if (state.tool === "draw" || state.tool === "erase" || state.tool === "text") watchItemHold(e);
   if (state.tool === "draw" || state.tool === "erase") return startStroke(e);
   if (state.tool === "lasso") return startLasso(e);
   if (state.tool !== "items") return;
@@ -1986,9 +1936,6 @@ pageEl.addEventListener("pointerdown", (e) => {
 });
 pageEl.addEventListener("pointermove", (e) => {
   if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (hold && e.pointerId === hold.pointerId && Math.hypot(e.clientX - hold.x, e.clientY - hold.y) > 10) {
-    cancelHold();  // the finger moved: it is drawing, not holding
-  }
   moveStroke(e);
   moveDrag(e);
   moveLasso(e);
@@ -1996,7 +1943,6 @@ pageEl.addEventListener("pointermove", (e) => {
 for (const type of ["pointerup", "pointercancel"]) {
   pageEl.addEventListener(type, (e) => {
     touches.delete(e.pointerId);
-    if (hold && e.pointerId === hold.pointerId) cancelHold();
     endStroke(e);
     endDrag(e);
     endLasso(e);
@@ -2385,10 +2331,6 @@ function saveActiveText() {
 
 // Tap on an empty place of the page: a new text box appears there
 pageEl.addEventListener("click", (e) => {
-  if (suppressClick) {
-    suppressClick = false;
-    return;
-  }
   if (state.tool !== "text" || e.target.closest(".item.text, .page-date, .page-title")) return;
   const rect = pageEl.getBoundingClientRect();
   const w = 0.5;

@@ -647,12 +647,6 @@ body[data-tool="text"] #pageTitle::placeholder { color: #c9bfc4; }
 .item.text[contenteditable="true"] { outline: 1px dashed #e3d3da; }
 .item.text:empty::before { content: "Текст…"; color: var(--muted); }
 .item.selected { outline: 2px dashed var(--accent); outline-offset: 3px; z-index: 2; }
-.item.picked-up {  /* picked up with press and hold: it "lifts" off the page */
-  z-index: 2;
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.25));
-}
 .resize-handle {
   position: absolute;
   right: -16px;

@@ -17,7 +17,6 @@ It is a web app: open it in Safari and add it to the Home Screen, and it works l
 - Page titles and search (titles, typed text and the text inside PDF pages)
 - Share a page or a whole notebook as a PDF, or a page as a picture
 - Glitter colours for the pen
-- Press and hold a sticker or photo with a finger to move it in any tool
 - Undo and redo for writing, stickers, photos and text
 - A calendar of the days you wrote, and page thumbnails
 - A 4-digit lock and a backup file you can save to Files

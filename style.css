@@ -296,6 +296,31 @@ select { width: auto; min-height: 36px; font-size: 14px; }
 .day.today { box-shadow: inset 0 0 0 1.5px var(--accent); }
 .day.current { background: var(--accent); color: #fff; }
 
+#pageSearch {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 15px;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.thumb-title {
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--text);
+}
+.no-results { grid-column: 1 / -1; margin: 6px 2px; font-size: 13px; color: var(--muted); }
+
 .side-sub { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 600; margin-top: 6px; }
 .side-sub .icon { width: 34px; min-width: 34px; min-height: 34px; font-size: 18px; }
 .thumbs {
@@ -344,6 +369,8 @@ select { width: auto; min-height: 36px; font-size: 14px; }
 .seg { display: flex; gap: 4px; flex-shrink: 0; }
 .seg button { min-height: 34px; padding: 0 10px; font-size: 14px; }
 .seg button.active { color: var(--accent-ink); background: var(--accent-soft); border-color: var(--accent); }
+button.toggle { min-height: 34px; padding: 0 10px; font-size: 14px; }
+button.toggle.active { color: var(--accent-ink); background: var(--accent-soft); border-color: var(--accent); }
 
 .colors { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .swatch {
@@ -459,6 +486,45 @@ select { width: auto; min-height: 36px; font-size: 14px; }
 }
 #page .page-date { pointer-events: auto; }
 #page .page-date input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: none; padding: 0; }
+
+/* Page title (top left). You can change it with the "Aa" tool or the sticker tool. */
+.page .page-title {
+  position: absolute;
+  top: calc(var(--pw) * 0.026);
+  left: calc(var(--pw) * 0.05);
+  z-index: 3;
+  width: calc(var(--pw) * 0.62);
+  min-height: 0;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: var(--font);
+  font-size: calc(var(--pw) * 0.034);
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  outline: none;
+  pointer-events: none;
+}
+.page .page-title::placeholder { color: transparent; }
+body[data-tool="text"] #pageTitle,
+body[data-tool="items"] #pageTitle { pointer-events: auto; }
+body[data-tool="text"] #pageTitle::placeholder { color: #c9bfc4; }
+
+/* A page of an imported PDF */
+.page .pdf-bg {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
 
 /* Templates (page layouts) */
 [data-template="lines"] {
@@ -581,6 +647,12 @@ select { width: auto; min-height: 36px; font-size: 14px; }
 .item.text[contenteditable="true"] { outline: 1px dashed #e3d3da; }
 .item.text:empty::before { content: "Текст…"; color: var(--muted); }
 .item.selected { outline: 2px dashed var(--accent); outline-offset: 3px; z-index: 2; }
+.item.picked-up {  /* picked up with press and hold: it "lifts" off the page */
+  z-index: 2;
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.25));
+}
 .resize-handle {
   position: absolute;
   right: -16px;
@@ -662,6 +734,10 @@ body[data-tool="text"] .item:not(.text),
   pointer-events: none;
 }
 
+/* Export: pages are built out of sight, without their paper (it is painted separately) */
+#exportStage { position: fixed; top: 0; left: -10000px; pointer-events: none; }
+.page.export-page { width: 600px; height: 800px; background: transparent; border-radius: 0; }
+
 /* ---------- Dialogs ---------- */
 
 dialog {
@@ -696,6 +772,10 @@ dialog p, dialog li { font-size: 15px; line-height: 1.5; }
 .tpl-pick.big { max-width: 110px; white-space: normal; text-align: center; }
 
 .pack-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; font-size: 38px; text-align: center; }
+
+.share-options { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.share-options button { justify-content: flex-start; min-height: 48px; font-size: 16px; }
+.share-options button i { font-size: 22px; color: var(--accent); }
 
 .frame-choice { display: flex; gap: 14px; }
 .frame-option { flex: 1; flex-direction: column; height: auto; padding: 14px; gap: 10px; }

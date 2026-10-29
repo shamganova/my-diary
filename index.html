@@ -96,17 +96,22 @@
         <button class="icon" id="sideClose" aria-label="Скрыть меню"><i class="ti ti-layout-sidebar-left-collapse"></i></button>
       </div>
 
-      <div class="cal-head">
-        <button class="icon" id="calPrev" aria-label="Прошлый месяц"><i class="ti ti-chevron-left"></i></button>
-        <span id="calTitle"></span>
-        <button class="icon" id="calNext" aria-label="Следующий месяц"><i class="ti ti-chevron-right"></i></button>
+      <input type="search" id="pageSearch" placeholder="Поиск по названиям и тексту" autocomplete="off">
+
+      <div id="calendarBox">
+        <div class="cal-head">
+          <button class="icon" id="calPrev" aria-label="Прошлый месяц"><i class="ti ti-chevron-left"></i></button>
+          <span id="calTitle"></span>
+          <button class="icon" id="calNext" aria-label="Следующий месяц"><i class="ti ti-chevron-right"></i></button>
+        </div>
+        <div class="calendar" id="calendar"></div>
       </div>
-      <div class="calendar" id="calendar"></div>
 
       <div class="side-sub">
-        <span>Страницы</span>
+        <span id="pagesLabel">Страницы</span>
         <span>
           <button class="icon" id="deletePageBtn" aria-label="Удалить страницу"><i class="ti ti-trash"></i></button>
+          <button class="icon" id="pdfImportBtn" aria-label="Добавить PDF"><i class="ti ti-file-type-pdf"></i></button>
           <button class="icon" id="addPageBtn" aria-label="Новая страница"><i class="ti ti-plus"></i></button>
         </span>
       </div>
@@ -123,11 +128,13 @@
           <button class="icon tool" data-tool="erase" aria-label="Ластик"><i class="ti ti-eraser"></i></button>
           <button class="icon tool" data-tool="lasso" aria-label="Выделить"><i class="ti ti-lasso"></i></button>
           <button class="icon tool" data-tool="items" aria-label="Стикеры"><i class="ti ti-sticker"></i></button>
-          <button class="icon" id="photoBtn" aria-label="Фото"><i class="ti ti-photo"></i></button>
+          <button class="icon" id="photoBtn" aria-label="Фото или PDF"><i class="ti ti-photo"></i></button>
           <button class="icon" id="templateBtn" aria-label="Разметка страницы"><i class="ti ti-layout-grid"></i></button>
           <span class="sep"></span>
           <button class="icon" id="undoBtn" aria-label="Отменить"><i class="ti ti-arrow-back-up"></i></button>
           <button class="icon" id="redoBtn" aria-label="Вернуть"><i class="ti ti-arrow-forward-up"></i></button>
+          <span class="sep"></span>
+          <button class="icon" id="shareBtn" aria-label="Поделиться"><i class="ti ti-share"></i></button>
           <span class="grow"></span>
           <button class="icon" id="prevPage" aria-label="Предыдущая страница"><i class="ti ti-chevron-left"></i></button>
           <span class="muted small" id="pageNum"></span>
@@ -143,6 +150,7 @@
           <label class="slider">Размер <input type="range" id="sizeRange" min="1" max="30"></label>
           <label class="slider">Прозрачность <input type="range" id="opacityRange" min="10" max="100"></label>
           <label class="slider">Стабилизация <input type="range" id="smoothRange" min="0" max="85"></label>
+          <button id="snapBtn" class="toggle"><i class="ti ti-shape"></i> Ровные фигуры</button>
         </div>
 
         <div class="options" data-for="erase">
@@ -179,6 +187,7 @@
       <div class="desk" id="desk">
         <div class="page" id="page" data-template="lines">
           <div class="layout" id="layout"></div>
+          <img class="pdf-bg" id="pdfBg" alt="" hidden>
           <canvas id="drawCanvas" width="1200" height="1600"></canvas>
           <canvas id="liveCanvas" width="1200" height="1600"></canvas>
           <div class="items" id="items"></div>
@@ -186,6 +195,8 @@
             <span id="pageDateText"></span>
             <input type="date" id="dateInput" aria-label="Дата страницы">
           </label>
+          <input type="text" class="page-title" id="pageTitle" placeholder="Название страницы" maxlength="80"
+                 autocomplete="off" spellcheck="false" aria-label="Название страницы">
           <div id="selectionBox" hidden></div>
         </div>
 
@@ -214,11 +225,32 @@
       </div>
     </div>
 
-    <input type="file" id="photoInput" accept="image/*" hidden>
+    <input type="file" id="photoInput" accept="image/*,application/pdf,.pdf" hidden>
+    <input type="file" id="pdfInput" accept="application/pdf,.pdf" hidden>
     <input type="file" id="customStickerInput" accept="image/*" hidden>
   </section>
 
   <!-- ===== Dialogs ===== -->
+
+  <dialog id="shareDialog">
+    <h2>Поделиться</h2>
+    <div class="share-options">
+      <button data-export="page-pdf"><i class="ti ti-file-type-pdf"></i> Эта страница — PDF</button>
+      <button data-export="book-pdf"><i class="ti ti-notebook"></i> Весь дневник — PDF</button>
+      <button data-export="page-image"><i class="ti ti-photo"></i> Эта страница — картинка</button>
+    </div>
+    <p class="muted small" id="shareStatus"></p>
+    <div class="dialog-actions">
+      <button id="shareClose">Закрыть</button>
+      <span class="grow"></span>
+      <button class="primary" id="shareSend" hidden><i class="ti ti-share"></i> Отправить</button>
+    </div>
+  </dialog>
+
+  <dialog id="progressDialog">
+    <h2 id="progressTitle"></h2>
+    <p class="muted" id="progressText"></p>
+  </dialog>
 
   <dialog id="nbDialog">
     <h2 id="nbDialogTitle">Новый дневник</h2>
@@ -316,6 +348,9 @@
       <button class="primary" id="settingsSave">Готово</button>
     </div>
   </dialog>
+
+  <!-- Pages are built here (out of sight) when you export them as PDF or a picture -->
+  <div id="exportStage" aria-hidden="true"></div>
 
   <script src="db.js"></script>
   <script src="stickers.js"></script>

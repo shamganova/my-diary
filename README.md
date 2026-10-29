@@ -1,4 +1,4 @@
-# My Diary
+# My Notes
 
 A free personal diary for iPad: notebooks with covers, Apple Pencil writing, stickers, photos and page templates.
 It is a web app: open it in Safari and add it to the Home Screen, and it works like a normal app, even offline.
@@ -9,7 +9,8 @@ It is a web app: open it in Safari and add it to the Home Screen, and it works l
 - Writing with Apple Pencil: pen, nib, pencil, marker, highlighter (size, opacity, stabilization)
 - Typed text with fonts, sizes, bold, italic, underline and strikethrough
 - Page rulings (lines, grid, dots, blank), page colour and line colour
-- Page templates: to-do list, day and week planners, habit tracker, mood tracker, gratitude page
+- Page templates: to-do list, day and week planners, lecture, Cornell notes, class timetable, deadlines and exams,
+  habit tracker, mood tracker, gratitude page
 - Sticker packs, your own stickers, and photos with an optional polaroid frame
 - Lasso: select writing, drawings, stickers and photos, then move, copy, cut, delete or paste them
 - Neat shapes: hold the pen still at the end of a line, and it becomes a straight line, circle, rectangle or triangle
@@ -27,7 +28,7 @@ Everything you write stays on your iPad (in the browser's storage). Nothing is s
 
 ## About this project
 
-Idea, design, templates and testing: Anel.
+Idea, design, the app icon (drawn by hand), templates and testing: Anel.
 The code was written together with an AI assistant (Claude).
 
 Built with HTML, CSS and JavaScript, without frameworks. Free libraries used (loaded from cdnjs when needed):

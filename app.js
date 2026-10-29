@@ -36,6 +36,10 @@ const LAYOUTS = [
   { id: "todo", name: "Список дел" },
   { id: "daily", name: "План на день" },
   { id: "weekly", name: "План на неделю" },
+  { id: "lecture", name: "Лекция" },
+  { id: "cornell", name: "Метод Корнелла" },
+  { id: "timetable", name: "Расписание пар" },
+  { id: "deadlines", name: "Дедлайны" },
   { id: "habits", name: "Трекер привычек" },
   { id: "mood", name: "Настроение" },
   { id: "gratitude", name: "Благодарность" },
@@ -63,6 +67,32 @@ function layoutHTML(id) {
     const days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье", "Заметки"];
     return `<h4>План на неделю</h4>
       <div class="weekly">${days.map((d) => `<div class="block"><h5>${d}</h5>${rows(4)}</div>`).join("")}</div>`;
+  }
+  if (id === "lecture") {
+    const field = (name) => `<div class="field-row"><span>${name}</span><div class="field-line"></div></div>`;
+    return `<h4>Лекция</h4>
+      <div class="lecture-head">${field("Предмет")}${field("Тема")}${field("Преподаватель")}</div>
+      ${rows(14)}`;
+  }
+  if (id === "cornell") {
+    // Cornell notes: key words and questions on the left, notes on the right, a short summary at the bottom
+    return `<h4>Конспект</h4>
+      <div class="cornell">
+        <div class="cues"><h5>Вопросы и ключевые слова</h5></div>
+        <div class="notes"><h5>Конспект</h5>${rows(15)}</div>
+        <div class="summary"><h5>Итог</h5>${rows(3)}</div>
+      </div>`;
+  }
+  if (id === "timetable") {
+    const days = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+    const head = `<span></span>${days.map((d) => `<span class="head">${d}</span>`).join("")}`;
+    const body = numbers(7).map((n) => `<span class="head">${n}</span>${"<span></span>".repeat(6)}`).join("");
+    return `<h4>Расписание пар</h4><div class="timetable">${head}${body}</div>`;
+  }
+  if (id === "deadlines") {
+    const head = ["Предмет", "Задание", "Срок", "✓"].map((name) => `<span class="head">${name}</span>`).join("");
+    const row = '<span></span><span></span><span></span><span><span class="box"></span></span>';
+    return `<h4>Дедлайны и экзамены</h4><div class="deadlines">${head}${row.repeat(16)}</div>`;
   }
   if (id === "habits") {
     const head = `<span></span>${numbers(31).map((d) => `<span class="head">${d}</span>`).join("")}`;
@@ -466,9 +496,8 @@ function renderPackRow() {
     const added = state.packs.includes(pack.id);
     const b = document.createElement("button");
     b.className = "pack" + (added ? " added" : "");
-    const face = document.createElement("span");
-    face.className = "pack-face";
-    face.textContent = pack.items[0];
+    const face = stickerFace(pack.items[0]);
+    face.classList.add("pack-face");
     const name = document.createElement("span");
     name.className = "pack-name";
     name.textContent = pack.name;
@@ -486,11 +515,7 @@ function openPackDialog(pack) {
   $("#packTitle").textContent = pack.name;
   const grid = $("#packGrid");
   grid.innerHTML = "";
-  for (const sticker of pack.items) {
-    const cell = document.createElement("div");
-    cell.textContent = sticker;
-    grid.appendChild(cell);
-  }
+  for (const sticker of pack.items) grid.appendChild(stickerFace(sticker));
   updatePackToggle();
   $("#packDialog").showModal();
 }
@@ -2440,7 +2465,7 @@ function renderStickerDrawer() {
   const tabIds = [...packs.map((p) => p.id), "custom"];
   if (!tabIds.includes(state.packTab)) state.packTab = tabIds[0];
 
-  for (const pack of packs) tabs.appendChild(packTab(pack.id, pack.items[0]));
+  for (const pack of packs) tabs.appendChild(packTab(pack.id, stickerFace(pack.items[0])));
   tabs.appendChild(packTab("custom", "Мои"));
 
   if (state.packTab === "custom") {
@@ -2465,13 +2490,26 @@ function renderStickerDrawer() {
     row.appendChild(add);
   } else {
     const pack = STICKER_PACKS.find((p) => p.id === state.packTab);
-    for (const emoji of pack.items) row.appendChild(stickerButton({ emoji }));
+    for (const look of pack.items) row.appendChild(stickerButton(look));
   }
+}
+
+// How a sticker looks in lists: its picture, or the emoji itself
+function stickerFace(look) {
+  if (look.src) {
+    const img = document.createElement("img");
+    img.src = look.src;
+    img.alt = "";
+    return img;
+  }
+  const span = document.createElement("span");
+  span.textContent = look.emoji;
+  return span;
 }
 
 function packTab(id, label) {
   const b = document.createElement("button");
-  b.textContent = label;
+  b.append(label);  // text ("Мои") or the first sticker of the pack
   b.classList.toggle("active", id === state.packTab);
   b.addEventListener("click", () => {
     state.packTab = id;

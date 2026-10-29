@@ -1,7 +1,7 @@
 // Service worker: keeps a copy of the app files (and fonts/icons), so the diary opens without internet.
 // It always tries the network first, so updates show up as soon as you are online.
 
-const CACHE = "diary-v2";
+const CACHE = "diary-v3";
 const FILES = ["./", "index.html", "style.css", "app.js", "db.js", "stickers.js", "manifest.json",
   "icon-180.png", "icon-192.png", "icon-512.png"];
 

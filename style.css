@@ -410,17 +410,22 @@ button.toggle.active { color: var(--text); background: var(--accent-soft); borde
 .slider input { width: 100px; accent-color: var(--accent); }
 .hint { font-size: 13px; color: var(--muted); white-space: nowrap; }
 
-.sticker-row { display: flex; flex-wrap: wrap; gap: 2px; min-width: 0; }
+/* Sticker panel: one row of packs and one row of stickers, both scroll sideways */
+#packTabs, #packStickers { flex: 1 1 100%; min-width: 0; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+#packTabs button { flex-shrink: 0; }
+.sticker-row { display: flex; gap: 4px; }
 .sticker-btn {
   position: relative;
-  min-width: 44px;
+  flex-shrink: 0;
+  min-width: 52px;
+  min-height: 56px;
   padding: 0 4px;
-  font-size: 28px;
+  font-size: 30px;
   background: transparent;
   border-color: transparent;
 }
-.sticker-btn img { display: block; width: auto; max-width: 80px; height: 34px; object-fit: contain; }
-.seg button img { display: block; width: auto; max-width: 48px; height: 22px; object-fit: contain; }
+.sticker-btn img { display: block; width: auto; max-width: 96px; height: 48px; object-fit: contain; }
+.seg button img { display: block; width: auto; max-width: 48px; height: 24px; object-fit: contain; }
 .sticker-btn .remove {
   position: absolute;
   top: -2px;

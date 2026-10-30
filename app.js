@@ -291,10 +291,16 @@ function showScreen(id) {
 async function start() {
   [state.profile, state.packs, state.customStickers, state.days] = await Promise.all([
     kv("profile", null),
-    kv("packs", ["flowers", "mood", "weather"]),
+    kv("packs", PICTURE_PACK_IDS),
     kv("customStickers", []),
     kv("days", []),
   ]);
+  // The picture sticker packs are new: switch them on once, also for people who already use the app
+  if ((await kv("packsVersion", 1)) < 2) {
+    state.packs = [...new Set([...PICTURE_PACK_IDS, ...state.packs])];
+    await setKV("packs", state.packs);
+    await setKV("packsVersion", 2);
+  }
   const savedTools = await kv("tools", {});
   Object.assign(state, savedTools);
   // New brushes (added in later versions) get their default settings

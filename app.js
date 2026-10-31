@@ -315,11 +315,14 @@ async function start() {
     kv("customStickers", []),
     kv("days", []),
   ]);
-  // The picture sticker packs are new: switch them on once, also for people who already use the app
-  if ((await kv("packsVersion", 1)) < 2) {
-    state.packs = [...new Set([...PICTURE_PACK_IDS, ...state.packs])];
+  // New picture sticker packs are switched on once, also for people who already use the app
+  // (version 2: the first picture packs, version 3: the ramen pack)
+  const packsVersion = await kv("packsVersion", 1);
+  if (packsVersion < 3) {
+    const newPacks = packsVersion < 2 ? PICTURE_PACK_IDS : ["ramen"];
+    state.packs = [...new Set([...newPacks, ...state.packs])];
     await setKV("packs", state.packs);
-    await setKV("packsVersion", 2);
+    await setKV("packsVersion", 3);
   }
   const savedTools = await kv("tools", {});
   Object.assign(state, savedTools);

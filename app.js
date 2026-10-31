@@ -10,21 +10,36 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 const MONTHS = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
 const MONTH_NAMES = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
 
+// Notebook covers are pictures (covers/<id>.webp): cloth, leather or denim with one detail.
+// The notebook's title is written on top: "ink" is its colour, "kind" says where and how
+// (inset = inside stitching or a frame, spine = right of a cloth spine, label = on a paper label,
+// gold = gold letters). The first four are the main covers, chosen by Anel.
 const COVERS = [
-  // Minimalist covers chosen by Anel: one quiet detail each (drawn in style.css)
-  { id: "stone", bg: "#CECCC5", ink: "#2B2B2A", pattern: "band" },
-  { id: "denim", bg: "#3E5D7E", ink: "#F1F4F8", pattern: "stitch" },
-  { id: "mustard", bg: "#D3A23F", ink: "#3B2A0E", pattern: "corner" },
-  { id: "salvia", bg: "#A0B19A", ink: "#22301F", pattern: "frame" },
-  { id: "rose", bg: "#F4C0D1", ink: "#72243E", pattern: "plain" },
-  { id: "sky", bg: "#B5D4F4", ink: "#0C447C", pattern: "dots" },
-  { id: "sage", bg: "#C0DD97", ink: "#27500A", pattern: "plain" },
-  { id: "sand", bg: "#FAEEDA", ink: "#633806", pattern: "stripes" },
-  { id: "lavender", bg: "#CECBF6", ink: "#3C3489", pattern: "dots" },
-  { id: "peach", bg: "#F5C4B3", ink: "#712B13", pattern: "stripes" },
-  { id: "mint", bg: "#9FE1CB", ink: "#085041", pattern: "grid" },
-  { id: "night", bg: "#2C2C2A", ink: "#F1EFE8", pattern: "dots" },
+  { id: "stone", bg: "#CECCC5", ink: "#2B2B2A" },
+  { id: "denim", bg: "#3E5D7E", ink: "#F1F4F8", kind: "inset" },
+  { id: "mustard", bg: "#D3A23F", ink: "#3B2A0E" },
+  { id: "raspberry", bg: "#C23C6C", ink: "#FFE9F1", kind: "spine" },
+  { id: "salvia", bg: "#A0B19A", ink: "#22301F", kind: "inset" },
+  { id: "red", bg: "#B3302A", ink: "#F3E3C0", kind: "gold" },
+  { id: "aqua", bg: "#81D8D0", ink: "#0D4A45", kind: "inset" },
+  { id: "lavender", bg: "#A598DA", ink: "#231E48" },
+  { id: "lemon", bg: "#F2DD6E", ink: "#5A4A0A", kind: "label" },
+  { id: "sky", bg: "#78AEDF", ink: "#123A63", kind: "inset" },
+  { id: "cobalt", bg: "#2F5BB0", ink: "#FFF3E0", kind: "gold" },
+  { id: "ice", bg: "#CFE2F1", ink: "#1D3D5C", kind: "inset" },
 ];
+
+// Covers that were removed: notebooks that still have one get a similar new cover
+const OLD_COVERS = { rose: "raspberry", sage: "salvia", sand: "stone", peach: "raspberry", mint: "aqua", night: "denim" };
+
+function coverLook(id) {
+  return COVERS.find((c) => c.id === (OLD_COVERS[id] || id)) || COVERS[0];
+}
+
+// The cover picture as a CSS background (the colour shows while the picture loads)
+function coverBackground(look) {
+  return `${look.bg} url(covers/${look.id}.webp) center / cover`;
+}
 
 const TEMPLATES = [
   { id: "lines", name: "Линейка" },
@@ -121,11 +136,11 @@ function layoutHTML(id) {
 
 // Ready-made notebooks on the home screen
 const PRESETS = [
-  { title: "Личный дневник", cover: "rose", template: "lines" },
-  { title: "Планер", cover: "sand", template: "grid" },
-  { title: "Скетчбук", cover: "lavender", template: "blank" },
-  { title: "Учёба", cover: "sky", template: "dots" },
-  { title: "Путешествия", cover: "sage", template: "dots" },
+  { title: "Личный дневник", cover: "raspberry", template: "lines" },
+  { title: "Планер", cover: "mustard", template: "grid" },
+  { title: "Скетчбук", cover: "stone", template: "blank" },
+  { title: "Учёба", cover: "denim", template: "dots" },
+  { title: "Путешествия", cover: "sky", template: "dots" },
 ];
 
 const COLORS = ["#2b2730", "#8d8288", "#d4537e", "#f08a3c", "#e3b31b", "#46a874", "#3f86d0", "#8a5cd1"];
@@ -472,15 +487,18 @@ function renderHome() {
 }
 
 function coverCard(title, coverId, onOpen, onMore) {
-  const look = COVERS.find((c) => c.id === coverId) || COVERS[0];
+  const look = coverLook(coverId);
   const card = document.createElement("div");
   card.className = "nb";
-  card.style.setProperty("--cover", look.bg);
   card.style.setProperty("--cover-ink", look.ink);
 
   const cover = document.createElement("button");
-  cover.className = `cover pattern-${look.pattern}`;
-  cover.textContent = title;
+  cover.className = `cover ${look.kind || ""}`;
+  cover.style.setProperty("--cover", coverBackground(look));
+  const name = document.createElement("span");
+  name.className = "cover-title";
+  name.textContent = title;
+  cover.appendChild(name);
   cover.addEventListener("click", onOpen);
   card.appendChild(cover);
 
@@ -555,7 +573,7 @@ let pickedLayout = null;
 
 function openNotebookDialog(nb) {
   editingNb = nb;
-  pickedCover = nb ? nb.cover : COVERS[0].id;
+  pickedCover = nb ? coverLook(nb.cover).id : COVERS[0].id;
   pickedTemplate = nb ? nb.template : TEMPLATES[0].id;
   pickedLayout = nb ? nb.layout || null : null;
   $("#nbDialogTitle").textContent = nb ? "Дневник" : "Новый дневник";
@@ -571,9 +589,8 @@ function renderNotebookPicks() {
   covers.innerHTML = "";
   for (const look of COVERS) {
     const b = document.createElement("button");
-    b.className = `cover pick-cover pattern-${look.pattern}` + (look.id === pickedCover ? " picked" : "");
-    b.style.setProperty("--cover", look.bg);
-    b.style.setProperty("--cover-ink", look.ink);
+    b.className = "cover pick-cover" + (look.id === pickedCover ? " picked" : "");
+    b.style.setProperty("--cover", coverBackground(look));
     b.setAttribute("aria-label", "Обложка");
     b.addEventListener("click", () => {
       pickedCover = look.id;

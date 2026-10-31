@@ -3,21 +3,18 @@
 // (stickers/<pack>/01.webp, 02.webp, ...). Emoji packs use the iPad's own emoji.
 
 // [id, name, how many stickers, width on the page (a part of the page width)]
+// Removed on 2026-10-31 (Anel didn't like them): toast, tea, space, makeup, school.
+// Their pictures stay in stickers/, so stickers already put on pages still show.
 const PICTURE_PACKS = [
   ["watercolor", "Акварель", 30, 0.13],
   ["cats", "Котики", 20, 0.15],
   ["pigeons", "Голуби", 16, 0.17],
   ["chick", "Цыплёнок", 16, 0.14],
-  ["toast", "Тостик", 16, 0.14],
   ["smileys", "Смайлики", 16, 0.12],
   ["fruits", "Фрукты", 16, 0.14],
   ["milk", "Молоко", 16, 0.14],
-  ["tea", "Чаепитие", 16, 0.15],
   ["bouquets", "Букеты", 16, 0.15],
   ["fish", "Рыбки", 16, 0.16],
-  ["space", "Космос", 16, 0.15],
-  ["makeup", "Косметика", 16, 0.15],
-  ["school", "Учёба", 17, 0.14],
 ];
 
 const EMOJI_PACKS = [

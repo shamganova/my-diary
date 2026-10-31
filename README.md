@@ -5,14 +5,14 @@ It is a web app: open it in Safari and add it to the Home Screen, and it works l
 
 ## Features
 
-- Notebooks with different covers, plus ready-made notebooks
+- Notebooks with cloth, leather and denim covers (12 to choose from), plus ready-made notebooks
 - Writing with Apple Pencil: pen, nib, pencil, marker, highlighter (size, opacity, stabilization)
 - Typed text with fonts, sizes, bold, italic, underline and strikethrough
 - Page rulings (lines, grid, dots, blank), page colour and line colour
 - Page templates: to-do list, day and week planners, lecture, Cornell notes, class timetable, deadlines and exams,
   habit tracker, mood tracker, gratitude page
-- 14 picture sticker packs (243 stickers: watercolor, cats, pigeons, food, flowers, space, school and more),
-  emoji packs, your own stickers, and photos with an optional polaroid frame
+- 9 picture sticker packs (162 stickers: watercolor, cats, pigeons, chick, smileys, fruits, milk, flowers and
+  fish), emoji packs, your own stickers, and photos with an optional polaroid frame
 - Lasso: select writing, drawings, stickers and photos, then move, copy, cut, delete or paste them
 - Neat shapes: hold the pen still at the end of a line, and it becomes a straight line, circle, rectangle or triangle
 - PDF: add lecture slides or any PDF and write on top of them

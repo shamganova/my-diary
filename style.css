@@ -224,31 +224,28 @@ select { width: auto; min-height: 36px; font-size: 14px; }
   background: var(--cover);
   border: none;
   border-radius: 6px 14px 14px 6px;
-  box-shadow: inset 7px 0 0 rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18), 0 4px 10px rgba(0, 0, 0, 0.08);
 }
-.pattern-dots { background-image: radial-gradient(circle, rgba(255, 255, 255, 0.5) 2px, transparent 2.5px); background-size: 16px 16px; }
-.pattern-stripes { background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.35) 0 6px, transparent 6px 14px); }
-.pattern-grid {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.35) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.35) 1px, transparent 1px);
-  background-size: 14px 14px;
+/* Covers are pictures (covers/<id>.webp). The title goes where the picture leaves room:
+   inside stitching or a frame, right of a cloth spine, on a paper label, or in gold letters. */
+.cover.inset { padding: 14px 14% 11% 15%; }
+.cover.spine { padding-left: 28%; }
+.cover.gold .cover-title {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  background: linear-gradient(100deg, #9c7128, #ebd08a 35%, #b38936 60%, #f8e9b8 80%, #a57b2c);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
-/* Minimalist covers: a dark band, a dark corner, a thin frame, or stitching on denim.
-   Sizes are in % so they look the same on the shelf and in the small cover picker. */
-.pattern-band { background-image: linear-gradient(transparent 54%, #3a3b3d 54% 61%, transparent 61%); }
-.pattern-corner { background-image: linear-gradient(135deg, transparent 90.4%, #2e3033 90.4%); }
-.pattern-stitch { background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 4px); }
-.pattern-frame, .pattern-stitch { padding: 14px 14px 17px 19px; }
-.pattern-frame::after, .pattern-stitch::after {
-  content: "";
-  position: absolute;
-  inset: 4.4% 5.8% 4.4% 10.4%;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 4px;
-  pointer-events: none;
+.cover.label { align-items: flex-start; justify-content: center; padding: 34% 10% 14px; text-align: center; }
+.cover.label .cover-title {
+  display: inline-block;
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: 3px;
+  background: #fffbf0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25), inset 0 0 0 3px #fffbf0, inset 0 0 0 4px rgba(90, 74, 10, 0.45);
 }
-.pattern-stitch::after { inset: 2.8% 3.75% 2.8% 8.75%; border: 1px dashed #e2aa57; border-radius: 3px 10px 10px 3px; }
 .cover.new {
   flex-direction: column;
   align-items: center;

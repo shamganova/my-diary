@@ -11,6 +11,11 @@ const MONTHS = ["января", "февраля", "марта", "апреля", 
 const MONTH_NAMES = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
 
 const COVERS = [
+  // Minimalist covers chosen by Anel: one quiet detail each (drawn in style.css)
+  { id: "stone", bg: "#CECCC5", ink: "#2B2B2A", pattern: "band" },
+  { id: "denim", bg: "#3E5D7E", ink: "#F1F4F8", pattern: "stitch" },
+  { id: "mustard", bg: "#D3A23F", ink: "#3B2A0E", pattern: "corner" },
+  { id: "salvia", bg: "#A0B19A", ink: "#22301F", pattern: "frame" },
   { id: "rose", bg: "#F4C0D1", ink: "#72243E", pattern: "plain" },
   { id: "sky", bg: "#B5D4F4", ink: "#0C447C", pattern: "dots" },
   { id: "sage", bg: "#C0DD97", ink: "#27500A", pattern: "plain" },

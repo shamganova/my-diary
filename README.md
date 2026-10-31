@@ -29,7 +29,7 @@ Everything you write stays on your iPad (in the browser's storage). Nothing is s
 
 ## About this project
 
-Idea, design, the app icon (drawn by hand), templates and testing: Anel.
+Idea, design, the app icon idea (a blue heart on a lined notepad), templates and testing: Anel.
 The picture sticker packs were made by Anel with an AI image tool.
 The code was written together with an AI assistant (Claude).
 

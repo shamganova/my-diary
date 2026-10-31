@@ -1,10 +1,10 @@
 // Sticker packs.
 // Picture packs: Anel made the sheets with an AI image tool, and each sheet was cut into separate stickers
-// (stickers/<pack>/01.webp, 02.webp, ...). The ramen pack was drawn in code by Claude.
-// Emoji packs use the iPad's own emoji.
+// (stickers/<pack>/01.webp, 02.webp, ...). Emoji packs use the iPad's own emoji.
 
 // [id, name, how many stickers, width on the page (a part of the page width)]
 // Removed on 2026-10-31 (Anel didn't like them): toast, tea, space, makeup, school.
+// Removed on 2026-11-01: ramen ("Рамен и бабл ти", drawn in code by Claude).
 // Their pictures stay in stickers/, so stickers already put on pages still show.
 const PICTURE_PACKS = [
   ["watercolor", "Акварель", 30, 0.13],
@@ -16,7 +16,6 @@ const PICTURE_PACKS = [
   ["milk", "Молоко", 16, 0.14],
   ["bouquets", "Букеты", 16, 0.15],
   ["fish", "Рыбки", 16, 0.16],
-  ["ramen", "Рамен и бабл ти", 16, 0.15],
 ];
 
 const EMOJI_PACKS = [

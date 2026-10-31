@@ -11,8 +11,8 @@ It is a web app: open it in Safari and add it to the Home Screen, and it works l
 - Page rulings (lines, grid, dots, blank), page colour and line colour
 - Page templates: to-do list, day and week planners, lecture, Cornell notes, class timetable, deadlines and exams,
   habit tracker, mood tracker, gratitude page
-- 10 picture sticker packs (178 stickers: watercolor, cats, pigeons, chick, smileys, fruits, milk, flowers, fish,
-  and ramen and bubble tea), emoji packs, your own stickers, and photos with an optional polaroid frame
+- 9 picture sticker packs (162 stickers: watercolor, cats, pigeons, chick, smileys, fruits, milk, flowers and
+  fish), emoji packs, your own stickers, and photos with an optional polaroid frame
 - Lasso: select writing, drawings, stickers and photos, then move, copy, cut, delete or paste them
 - Neat shapes: hold the pen still at the end of a line, and it becomes a straight line, circle, rectangle or triangle
 - PDF: add lecture slides or any PDF and write on top of them
@@ -30,8 +30,7 @@ Everything you write stays on your iPad (in the browser's storage). Nothing is s
 ## About this project
 
 Idea, design, the app icon idea (a blue heart on a lined notepad), templates and testing: Anel.
-The picture sticker packs were made by Anel with an AI image tool; the ramen and bubble tea pack was drawn in
-code by the AI assistant.
+The picture sticker packs were made by Anel with an AI image tool.
 The code was written together with an AI assistant (Claude).
 
 Built with HTML, CSS and JavaScript, without frameworks. Free libraries used (loaded from cdnjs when needed):

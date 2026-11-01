@@ -405,7 +405,7 @@ function showLock(afterUnlock) {
   pinTyped = "";
   updatePinDots();
   $("#lockError").textContent = "";
-  $("#lockAvatar").textContent = state.profile.name[0].toUpperCase();
+  paintAvatar($("#lockAvatar"));
   $("#lockHello").textContent = `Привет, ${state.profile.name}`;
   showScreen("lock");
 }
@@ -504,9 +504,17 @@ function getStreak() {
   return streak;
 }
 
+// The profile photo, or the first letter of the name when there is no photo
+function paintAvatar(el) {
+  const photo = state.profile.avatar;
+  el.textContent = photo ? "" : state.profile.name[0].toUpperCase();
+  el.classList.toggle("photo", Boolean(photo));
+  el.style.backgroundImage = photo ? `url(${photo})` : "";
+}
+
 function renderHome() {
   const name = state.profile.name;
-  $("#homeAvatar").textContent = name[0].toUpperCase();
+  paintAvatar($("#homeAvatar"));
   $("#homeHello").textContent = `Привет, ${name}`;
   const streak = getStreak();
   $("#homeSub").textContent = streak > 0
@@ -521,7 +529,7 @@ function renderHome() {
   }
   const add = document.createElement("div");
   add.className = "nb";
-  add.innerHTML = '<button class="cover new"><i class="ti ti-plus"></i>Новый дневник</button>';
+  add.innerHTML = '<button class="cover new"><i class="ti ti-plus"></i>Создать свой</button>';
   add.firstChild.addEventListener("click", () => openNotebookDialog(null));
   shelf.appendChild(add);
 
@@ -624,7 +632,7 @@ function openNotebookDialog(nb) {
   pickedCover = nb ? coverLook(nb.cover).id : COVERS[0].id;
   pickedTemplate = nb ? nb.template : TEMPLATES[0].id;
   pickedLayout = nb ? nb.layout || null : null;
-  $("#nbDialogTitle").textContent = nb ? "Дневник" : "Новый дневник";
+  $("#nbDialogTitle").textContent = nb ? "Дневник" : "Создать свой дневник";
   $("#nbName").value = nb ? nb.title : "";
   $("#nbSave").textContent = nb ? "Сохранить" : "Создать";
   $("#nbDelete").hidden = !nb;
@@ -776,7 +784,7 @@ function sortPages() {
 }
 
 // A new page has the paper colours of the page you are on and the notebook's page template, if the notebook
-// has one (chosen in "Новый дневник"); otherwise it is a plain page, also after a calendar or lecture page.
+// has one (chosen in "Создать свой"); otherwise it is a plain page, also after a calendar or lecture page.
 // layout: give a page template (or null for a plain page) to choose it instead.
 async function makePage(date, layout = state.nb.layout || null) {
   const like = state.pages[state.current] || {};
@@ -3041,7 +3049,66 @@ $("#templateClose").addEventListener("click", () => $("#templateDialog").close()
 
 $("#settingsBtn").addEventListener("click", () => {
   $("#settingsName").value = state.profile.name;
+  renderProfilePhoto();
+  for (const id of ["#pinChangeOld", "#pinChangeNew", "#pinChangeRepeat"]) $(id).value = "";
+  $("#pinChangeError").textContent = "";
+  $("#pinChange").open = false;
   $("#settingsDialog").showModal();
+});
+
+function renderProfilePhoto() {
+  paintAvatar($("#settingsAvatar"));
+  $("#avatarRemove").hidden = !state.profile.avatar;
+}
+
+// A square from the middle of a picture, made small (256 x 256), for the profile photo
+async function squarePhoto(file, size = 256) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await loadImage(url);
+    const side = Math.min(img.width, img.height);
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = size;
+    canvas.getContext("2d").drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+    return canvas.toDataURL("image/jpeg", 0.85);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+$("#avatarInput").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  try {
+    state.profile.avatar = await squarePhoto(file);
+  } catch {
+    return alert("Не получилось открыть эту картинку.");
+  }
+  await setKV("profile", state.profile);
+  renderProfilePhoto();
+  renderHome();
+});
+
+$("#avatarRemove").addEventListener("click", async () => {
+  delete state.profile.avatar;
+  await setKV("profile", state.profile);
+  renderProfilePhoto();
+  renderHome();
+});
+
+$("#pinChangeSave").addEventListener("click", async () => {
+  const error = $("#pinChangeError");
+  const pin = $("#pinChangeNew").value;
+  if (hashPin($("#pinChangeOld").value) !== state.profile.pin) return (error.textContent = "Пароль сейчас неверный");
+  if (!/^\d{4}$/.test(pin)) return (error.textContent = "Новый пароль: ровно 4 цифры");
+  if (pin !== $("#pinChangeRepeat").value) return (error.textContent = "Новые пароли не совпадают");
+  state.profile.pin = hashPin(pin);
+  await setKV("profile", state.profile);
+  for (const id of ["#pinChangeOld", "#pinChangeNew", "#pinChangeRepeat"]) $(id).value = "";
+  error.textContent = "";
+  $("#pinChange").open = false;
+  showToast("Пароль изменён");
 });
 
 $("#settingsSave").addEventListener("click", async () => {

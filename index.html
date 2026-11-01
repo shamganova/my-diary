@@ -253,7 +253,7 @@
   </dialog>
 
   <dialog id="nbDialog">
-    <h2 id="nbDialogTitle">Новый дневник</h2>
+    <h2 id="nbDialogTitle">Создать свой дневник</h2>
     <label class="field">Название
       <input id="nbName" type="text" maxlength="40" placeholder="Мой дневник">
     </label>
@@ -331,9 +331,34 @@
 
   <dialog id="settingsDialog">
     <h2>Настройки</h2>
-    <label class="field">Имя
-      <input id="settingsName" type="text" maxlength="30">
-    </label>
+    <!-- Profile: photo, name and password -->
+    <div class="profile-edit">
+      <label class="avatar-pick" aria-label="Выбрать фото">
+        <span class="avatar big" id="settingsAvatar"></span>
+        <span class="avatar-badge"><i class="ti ti-camera"></i></span>
+        <input type="file" id="avatarInput" accept="image/*" hidden>
+      </label>
+      <div class="grow">
+        <label class="field">Имя
+          <input id="settingsName" type="text" maxlength="30">
+        </label>
+        <button class="text-button" id="avatarRemove" hidden>Убрать фото</button>
+      </div>
+    </div>
+    <details class="pin-change" id="pinChange">
+      <summary><i class="ti ti-key"></i> Сменить пароль</summary>
+      <label class="field">Пароль сейчас
+        <input id="pinChangeOld" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
+      </label>
+      <label class="field">Новый пароль из 4 цифр
+        <input id="pinChangeNew" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
+      </label>
+      <label class="field">Повтори новый пароль
+        <input id="pinChangeRepeat" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
+      </label>
+      <p class="error" id="pinChangeError"></p>
+      <button class="primary" id="pinChangeSave">Сменить пароль</button>
+    </details>
     <h3>Резервная копия</h3>
     <p class="muted small">Дневник хранится только на этом iPad. Иногда сохраняй копию в «Файлы».</p>
     <div class="row">

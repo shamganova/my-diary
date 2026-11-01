@@ -172,11 +172,12 @@ function layoutHTML(id, date = todayISO()) {
 }
 
 // Ready-made notebooks on the home screen. pages = the page templates of their first pages (null = a plain page
-// with the notebook's ruling): special pages mixed with plain ones. New pages are plain.
+// with the notebook's ruling): special pages mixed with plain ones. New pages are plain. dates: false = the pages
+// don't show their date.
 const PRESETS = [
   { title: "Личный дневник", cover: "raspberry", template: "lines", pages: [null] },
   { title: "Планер", cover: "mustard", template: "grid", pages: ["month", null, "weekly", null] },
-  { title: "Скетчбук", cover: "stone", template: "blank", pages: [null] },
+  { title: "Скетчбук", cover: "stone", template: "blank", pages: [null], dates: false },
   { title: "Учёба", cover: "denim", template: "grid", pages: ["timetable", null, "lecture", null] },
   { title: "Путешествия", cover: "sky", template: "grid", pages: ["trip", null, "packing", null] },
 ];
@@ -370,6 +371,11 @@ async function start() {
   renderDrawOptions();
   renderTextOptions();
   state.notebooks = await DB.all("notebooks");
+  // sketchbooks made before 2026-11-02 also stop showing dates on their pages
+  for (const nb of state.notebooks.filter((n) => n.dates === undefined && n.title === "Скетчбук" && n.template === "blank")) {
+    nb.dates = false;
+    await DB.put("notebooks", nb);
+  }
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
 
   setTimeout(() => (state.profile ? showLock("home") : showScreen("welcome")), 1300);
@@ -718,8 +724,8 @@ $("#nbDelete").addEventListener("click", async () => {
   renderHome();
 });
 
-async function createNotebook({ title, cover, template, layout = null, pages = [layout] }) {
-  const nb = { id: uid(), title, cover, template, layout, created: Date.now(), updated: Date.now() };
+async function createNotebook({ title, cover, template, layout = null, pages = [layout], dates = true }) {
+  const nb = { id: uid(), title, cover, template, layout, dates, created: Date.now(), updated: Date.now() };
   await DB.put("notebooks", nb);
   state.notebooks.push(nb);
   // the first pages (a ready-made planner starts with a month calendar and a week, and so on)
@@ -794,6 +800,13 @@ async function makePage(date, layout = state.nb.layout || null) {
 async function addPage(date) {
   dropSelection();
   await flushSave();
+  // A notebook with month calendars (the planner) gets the calendar of a new month, dated the 1st,
+  // so it comes before the month's other pages
+  const month = date.slice(0, 7);
+  if (state.pages.some((p) => p.layout === "month") && !state.pages.some((p) => p.layout === "month" && p.date.startsWith(month))) {
+    state.pages.push(await makePage(`${month}-01`, "month"));
+    showToast(`Добавлен календарь на ${MONTH_NAMES[Number(month.slice(5)) - 1].toLowerCase()}`);
+  }
   const page = await makePage(date);
   state.pages.push(page);
   sortPages();
@@ -952,6 +965,7 @@ function renderPage() {
   undoStack = [];
   redoStack = [];
   decoratePage(pageEl, page);
+  pageEl.classList.toggle("no-date", state.nb.dates === false);
   $("#layout").innerHTML = page.layout ? layoutHTML(page.layout, page.date) : "";
   showPdf($("#pdfBg"), page.pdf);
   $("#pageTitle").value = page.title || "";
@@ -1173,10 +1187,13 @@ function addPageParts(el, page) {
   items.className = "items";
   for (const item of page.items) items.appendChild(buildItem(item));
   el.appendChild(items);
-  const date = document.createElement("div");
-  date.className = "page-date";
-  date.textContent = formatDate(page.date);
-  el.appendChild(date);
+  const nb = state.notebooks.find((n) => n.id === page.notebookId);
+  if (!nb || nb.dates !== false) {
+    const date = document.createElement("div");
+    date.className = "page-date";
+    date.textContent = formatDate(page.date);
+    el.appendChild(date);
+  }
   if (page.title) {
     const title = document.createElement("div");
     title.className = "page-title";

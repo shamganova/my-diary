@@ -56,6 +56,7 @@ const LAYOUTS = [
   { id: "todo", name: "Список дел" },
   { id: "daily", name: "План на день" },
   { id: "weekly", name: "План на неделю" },
+  { id: "month", name: "Календарь на месяц" },
   { id: "lecture", name: "Лекция" },
   { id: "cornell", name: "Метод Корнелла" },
   { id: "timetable", name: "Расписание пар" },
@@ -63,11 +64,16 @@ const LAYOUTS = [
   { id: "habits", name: "Трекер привычек" },
   { id: "mood", name: "Настроение" },
   { id: "gratitude", name: "Благодарность" },
+  { id: "trip", name: "Поездка" },
+  { id: "packing", name: "Что взять с собой" },
 ];
 
-function layoutHTML(id) {
+// date: the page's date, so calendar pages show the right week or month
+function layoutHTML(id, date = todayISO()) {
   const rows = (n) => '<div class="row"></div>'.repeat(n);
   const numbers = (n) => Array.from({ length: n }, (_, i) => i + 1);
+  const boxes = (n) => '<div class="row"><span class="box"></span></div>'.repeat(n);
+  const day = parseISO(date);
 
   if (id === "todo") {
     return `<h4>Список дел</h4>${'<div class="row"><span class="box"></span></div>'.repeat(17)}`;
@@ -84,9 +90,28 @@ function layoutHTML(id) {
       </div>`;
   }
   if (id === "weekly") {
-    const days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье", "Заметки"];
-    return `<h4>План на неделю</h4>
-      <div class="weekly">${days.map((d) => `<div class="block"><h5>${d}</h5>${rows(4)}</div>`).join("")}</div>`;
+    // the week (Monday to Sunday) of the page's date, with the day numbers
+    const names = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"];
+    const monday = new Date(day.getFullYear(), day.getMonth(), day.getDate() - ((day.getDay() + 6) % 7));
+    const dayOfWeek = (i) => new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+    const sunday = dayOfWeek(6);
+    const range = monday.getMonth() === sunday.getMonth()
+      ? `${monday.getDate()}–${sunday.getDate()} ${MONTHS[sunday.getMonth()]}`
+      : `${monday.getDate()} ${MONTHS[monday.getMonth()]} – ${sunday.getDate()} ${MONTHS[sunday.getMonth()]}`;
+    const blocks = names.map((name, i) => `<div class="block"><h5>${name}<span>${dayOfWeek(i).getDate()}</span></h5>${rows(4)}</div>`);
+    return `<h4>Неделя · ${range}</h4>
+      <div class="weekly">${blocks.join("")}<div class="block"><h5>Заметки</h5>${rows(4)}</div></div>`;
+  }
+  if (id === "month") {
+    // a calendar of the page's month: weeks start on Monday
+    const year = day.getFullYear(), month = day.getMonth();
+    const before = (new Date(year, month, 1).getDay() + 6) % 7;
+    const cells = [...Array(before).fill('<span class="out"></span>'), ...numbers(new Date(year, month + 1, 0).getDate()).map((d) => `<span>${d}</span>`)];
+    while (cells.length % 7) cells.push('<span class="out"></span>');
+    const head = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((name) => `<span class="head">${name}</span>`).join("");
+    return `<h4>${MONTH_NAMES[month]} ${year}</h4>
+      <div class="month">${head}${cells.join("")}</div>
+      <h5>Заметки</h5>${rows(4)}`;
   }
   if (id === "lecture") {
     const field = (name) => `<div class="field-row"><span>${name}</span><div class="field-line"></div></div>`;
@@ -131,16 +156,29 @@ function layoutHTML(id) {
       <h5>Сегодня было хорошо</h5>${rows(5)}
       <h5>Завтра я хочу</h5>${rows(4)}`;
   }
+  if (id === "trip") {
+    const field = (name) => `<div class="field-row"><span>${name}</span><div class="field-line"></div></div>`;
+    return `<h4>Поездка</h4>
+      <div class="lecture-head">${field("Куда")}${field("Когда")}${field("Где живём")}${field("Билеты")}</div>
+      <h5>Маршрут по дням</h5>${rows(7)}
+      <h5>Хочу увидеть и попробовать</h5>${boxes(5)}`;
+  }
+  if (id === "packing") {
+    const group = (name, n) => `<div class="block"><h5>${name}</h5>${boxes(n)}</div>`;
+    return `<h4>Что взять с собой</h4>
+      <div class="packing">${group("Документы и деньги", 4)}${group("Одежда", 6)}${group("Уход и косметика", 5)}${group("Техника", 4)}${group("Аптечка", 3)}${group("Ещё", 4)}</div>`;
+  }
   return "";
 }
 
-// Ready-made notebooks on the home screen
+// Ready-made notebooks on the home screen. pages = the page templates of their first pages (null = a plain page
+// with the notebook's ruling): special pages mixed with plain ones. New pages are plain.
 const PRESETS = [
-  { title: "Личный дневник", cover: "raspberry", template: "lines" },
-  { title: "Планер", cover: "mustard", template: "grid" },
-  { title: "Скетчбук", cover: "stone", template: "blank" },
-  { title: "Учёба", cover: "denim", template: "dots" },
-  { title: "Путешествия", cover: "sky", template: "dots" },
+  { title: "Личный дневник", cover: "raspberry", template: "lines", pages: [null] },
+  { title: "Планер", cover: "mustard", template: "grid", pages: ["month", null, "weekly", null] },
+  { title: "Скетчбук", cover: "stone", template: "blank", pages: [null] },
+  { title: "Учёба", cover: "denim", template: "grid", pages: ["timetable", null, "lecture", null] },
+  { title: "Путешествия", cover: "sky", template: "grid", pages: ["trip", null, "packing", null] },
 ];
 
 const COLORS = ["#2b2730", "#8d8288", "#d4537e", "#f08a3c", "#e3b31b", "#46a874", "#3f86d0", "#8a5cd1"];
@@ -620,10 +658,10 @@ function decoratePage(el, page) {
   el.style.setProperty("--rule", page.rule || RULES[0]);
 }
 
-function layoutElement(layoutId) {
+function layoutElement(layoutId, date) {
   const div = document.createElement("div");
   div.className = "layout";
-  div.innerHTML = layoutId ? layoutHTML(layoutId) : "";
+  div.innerHTML = layoutId ? layoutHTML(layoutId, date) : "";
   return div;
 }
 
@@ -680,10 +718,18 @@ $("#nbDelete").addEventListener("click", async () => {
   renderHome();
 });
 
-async function createNotebook({ title, cover, template, layout = null }) {
+async function createNotebook({ title, cover, template, layout = null, pages = [layout] }) {
   const nb = { id: uid(), title, cover, template, layout, created: Date.now(), updated: Date.now() };
   await DB.put("notebooks", nb);
   state.notebooks.push(nb);
+  // the first pages (a ready-made planner starts with a month calendar and a week, and so on)
+  state.nb = nb;
+  state.pages = [];
+  for (const [i, pageLayout] of pages.entries()) {
+    const page = await makePage(todayISO(), pageLayout);
+    page.order += i;  // keeps them in this order even if two are made in the same millisecond
+    await DB.put("pages", page);
+  }
   openNotebook(nb.id);
 }
 
@@ -723,16 +769,19 @@ function sortPages() {
   state.pages.sort((a, b) => a.date.localeCompare(b.date) || a.order - b.order);
 }
 
-// A new page looks like the page you are on (or like the notebook's settings, for the first page)
-async function makePage(date) {
+// A new page has the paper colours of the page you are on and the notebook's page template, if the notebook
+// has one (chosen in "Новый дневник"); otherwise it is a plain page, also after a calendar or lecture page.
+// layout: give a page template (or null for a plain page) to choose it instead.
+async function makePage(date, layout = state.nb.layout || null) {
   const like = state.pages[state.current] || {};
   const page = {
     id: uid(),
     notebookId: state.nb.id,
     order: Date.now(),
     date,
-    template: like.template || state.nb.template,
-    layout: like.id ? like.layout || null : state.nb.layout || null,
+    // a page template has its own lines; a plain page after a template page gets the notebook's ruling
+    template: layout ? "blank" : (like.layout ? null : like.template) || state.nb.template,
+    layout,
     paper: like.paper || PAPERS[0],
     rule: like.rule || RULES[0],
     drawing: null,
@@ -903,7 +952,7 @@ function renderPage() {
   undoStack = [];
   redoStack = [];
   decoratePage(pageEl, page);
-  $("#layout").innerHTML = page.layout ? layoutHTML(page.layout) : "";
+  $("#layout").innerHTML = page.layout ? layoutHTML(page.layout, page.date) : "";
   showPdf($("#pdfBg"), page.pdf);
   $("#pageTitle").value = page.title || "";
   $("#pageDateText").textContent = formatDate(page.date);
@@ -1106,7 +1155,7 @@ function buildMiniPage(page) {
 // Everything on a page except its paper: page template, PDF, drawing, stickers, photos, text, date, title.
 // Used for the small pages in the sidebar and for pictures/PDFs you share.
 function addPageParts(el, page) {
-  el.appendChild(layoutElement(page.layout));
+  el.appendChild(layoutElement(page.layout, page.date));
   if (page.pdf) {
     const img = document.createElement("img");
     img.className = "pdf-bg";
@@ -2960,7 +3009,7 @@ function renderPageDesign() {
     page[field] = value;
     if (field === "layout" && value) page.template = "blank";  // a page template has its own lines
     decoratePage(pageEl, page);
-    $("#layout").innerHTML = page.layout ? layoutHTML(page.layout) : "";
+    $("#layout").innerHTML = page.layout ? layoutHTML(page.layout, page.date) : "";
     savePageSoon();
     renderPageDesign();
   };

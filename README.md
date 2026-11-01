@@ -11,8 +11,9 @@ It is a web app: open it in Safari and add it to the Home Screen, and it works l
 - Page rulings (lines, grid, dots, blank), page colour and line colour
 - Page templates: to-do list, day and week planners, lecture, Cornell notes, class timetable, deadlines and exams,
   habit tracker, mood tracker, gratitude page
-- 9 picture sticker packs (162 stickers: watercolor, cats, pigeons, chick, smileys, fruits, milk, flowers and
-  fish), emoji packs, your own stickers, and photos with an optional polaroid frame
+- 11 picture sticker packs (235 stickers: breakfast, dogs and cats, pressed flowers, December, autumn, summer,
+  spring, watercolor, smileys, flowers and fish), emoji packs, your own stickers, and photos with an optional
+  polaroid frame
 - Lasso: select writing, drawings, stickers and photos, then move, copy, cut, delete or paste them
 - Neat shapes: hold the pen still at the end of a line, and it becomes a straight line, circle, rectangle or triangle
 - PDF: add lecture slides or any PDF and write on top of them
@@ -33,7 +34,8 @@ Idea, design, the app icon idea (a blue heart on a lined notepad), templates and
 The picture sticker packs were made by Anel with an AI image tool.
 The code was written together with an AI assistant (Claude).
 
-Built with HTML, CSS and JavaScript, without frameworks. Free libraries used (loaded from cdnjs when needed):
-[PDF.js](https://mozilla.github.io/pdf.js/) to read PDF files and [html2canvas](https://html2canvas.hertzen.com/)
-to turn pages into pictures for sharing. Icons: [Tabler Icons](https://tabler.io/icons). Fonts: Caveat and Comfortaa
-(Google Fonts).
+Built with HTML, CSS and JavaScript, without frameworks. Free libraries used (copies in the `vendor` folder, so
+the app works offline): [PDF.js](https://mozilla.github.io/pdf.js/) to read PDF files and
+[html2canvas](https://html2canvas.hertzen.com/) to turn pages into pictures for sharing. Icons:
+[Tabler Icons](https://tabler.io/icons). Fonts: Caveat and Comfortaa (Google Fonts). Their licenses are listed in
+`vendor/README.md`.

@@ -315,12 +315,15 @@ async function start() {
     kv("customStickers", []),
     kv("days", []),
   ]);
-  // The picture sticker packs are new: switch them on once, also for people who already use the app.
-  // (Version 3 switched on the ramen pack, which was removed again, so the next new pack needs version 4.)
-  if ((await kv("packsVersion", 1)) < 2) {
-    state.packs = [...new Set([...PICTURE_PACK_IDS, ...state.packs])];
+  // New picture sticker packs are switched on once, also for people who already use the app:
+  // version 2 = the first picture packs, version 4 = the seven packs of 2026-11-02
+  // (version 3 switched on the ramen pack, which was removed again; the next new packs need version 5).
+  const packsVersion = await kv("packsVersion", 1);
+  if (packsVersion < 4) {
+    const newPacks = packsVersion < 2 ? PICTURE_PACK_IDS : ["breakfast", "pets", "herbarium", "december", "autumn", "summer", "spring"];
+    state.packs = [...new Set([...newPacks, ...state.packs])];
     await setKV("packs", state.packs);
-    await setKV("packsVersion", 2);
+    await setKV("packsVersion", 4);
   }
   const savedTools = await kv("tools", {});
   Object.assign(state, savedTools);
@@ -2625,11 +2628,11 @@ $$(".frame-option").forEach((b) => {
 $("#frameCancel").addEventListener("click", () => $("#frameDialog").close());
 
 // ---------- PDF: add PDF pages (lecture slides) and write on them ----------
-// We use two free libraries from the internet (loaded only when needed, then kept for offline use):
+// We use two free libraries, kept in the vendor folder so they also work offline (loaded only when needed):
 // PDF.js reads PDF files, html2canvas takes a picture of a page for sharing.
 
-const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
-const HTML2CANVAS = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+const PDFJS = "vendor/pdfjs/";
+const HTML2CANVAS = "vendor/html2canvas.min.js";
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {

@@ -1174,8 +1174,8 @@ function buildMiniPage(page) {
   return mini;
 }
 
-// Everything on a page except its paper: page template, PDF, stickers, photos, text, then the writing over them,
-// date and title. Used for the small pages in the sidebar and for pictures/PDFs you share.
+// Everything on a page except its paper: page template, PDF, drawing, stickers, photos, text, date, title.
+// Used for the small pages in the sidebar and for pictures/PDFs you share.
 function addPageParts(el, page) {
   el.appendChild(layoutElement(page.layout, page.date));
   if (page.pdf) {
@@ -1185,16 +1185,16 @@ function addPageParts(el, page) {
     setBox(img, page.pdf);
     el.appendChild(img);
   }
-  const items = document.createElement("div");
-  items.className = "items";
-  for (const item of page.items) items.appendChild(buildItem(item));
-  el.appendChild(items);
   if (page.drawing) {
     const img = document.createElement("img");
     img.className = "drawing";
     img.src = page.drawing;
     el.appendChild(img);
   }
+  const items = document.createElement("div");
+  items.className = "items";
+  for (const item of page.items) items.appendChild(buildItem(item));
+  el.appendChild(items);
   const nb = state.notebooks.find((n) => n.id === page.notebookId);
   if (!nb || nb.dates !== false) {
     const date = document.createElement("div");

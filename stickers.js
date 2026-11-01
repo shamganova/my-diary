@@ -1,7 +1,8 @@
 // Sticker packs.
 // Picture packs: Anel made the sheets with an AI image tool, and each sheet was cut into separate stickers
-// (stickers/<pack>/01.webp, 02.webp, ...). The seven packs from 2026-11-02 only existed as small pictures,
-// so their stickers were made 3 times bigger when they were cut. Emoji packs use the iPad's own emoji.
+// (stickers/<pack>/01.webp, 02.webp, ...). The seven packs from 2026-11-02 were first cut from small pictures,
+// then again from Anel's bigger ones, keeping the same order (december got one more sticker, the silver star, at
+// the end). Emoji packs use the iPad's own emoji.
 
 // [id, name, how many stickers, width on the page (a part of the page width)]
 // Removed on 2026-10-31 (Anel didn't like them): toast, tea, space, makeup, school.
@@ -12,7 +13,7 @@ const PICTURE_PACKS = [
   ["breakfast", "Завтрак", 25, 0.12],
   ["pets", "Питомцы", 28, 0.13],
   ["herbarium", "Гербарий", 24, 0.12],
-  ["december", "Декабрь", 20, 0.13],
+  ["december", "Декабрь", 21, 0.13],
   ["autumn", "Осень", 20, 0.13],
   ["summer", "Лето", 20, 0.13],
   ["spring", "Весна", 20, 0.13],

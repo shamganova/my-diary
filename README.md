@@ -11,7 +11,7 @@ It is a web app: open it in Safari and add it to the Home Screen, and it works l
 - Page rulings (lines, grid, dots, blank), page colour and line colour
 - Page templates: to-do list, day and week planners, lecture, Cornell notes, class timetable, deadlines and exams,
   habit tracker, mood tracker, gratitude page
-- 11 picture sticker packs (235 stickers: breakfast, dogs and cats, pressed flowers, December, autumn, summer,
+- 11 picture sticker packs (236 stickers: breakfast, dogs and cats, pressed flowers, December, autumn, summer,
   spring, watercolor, smileys, flowers and fish), emoji packs, your own stickers, and photos with an optional
   polaroid frame
 - Lasso: select writing, drawings, stickers and photos, then move, copy, cut, delete or paste them

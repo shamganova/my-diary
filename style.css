@@ -527,6 +527,8 @@ button.toggle.active { color: var(--text); background: var(--accent-soft); borde
 }
 .desk .page { box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1); }
 #drawCanvas, #liveCanvas, .page .drawing { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* The writing is above stickers, photos and text, also above a selected one; touches go through it to them */
+#drawCanvas, #liveCanvas, .page .drawing { z-index: 2; pointer-events: none; }
 #page { touch-action: none; }
 .page .items { position: absolute; inset: 0; pointer-events: none; }
 
